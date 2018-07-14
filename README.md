@@ -16,7 +16,7 @@ composer require robindrost/prismic-eloquent
 
 Download Zip:
 
-@todo: github url
+https://github.com/robindrost/prismic-eloquent/archive/master.zip
 
 ## Difference between default Prismic api kit
 
