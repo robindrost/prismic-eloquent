@@ -375,4 +375,3 @@ class QueryBuilder
         return $this->api;
     }
 }
-
