@@ -58,7 +58,7 @@ class QueryBuilder
      */
     public function findById($id)
     {
-        $document = $this->api->getByID($id, $this->options);
+        $document = $this->api()->getByID($id, $this->options);
         $this->model->attachDocument($document);
 
         return $this->model;
@@ -72,7 +72,7 @@ class QueryBuilder
      */
     public function find($uid)
     {
-        $document = $this->api->getByUid($this->model->getTypeName(), $uid, $this->options);
+        $document = $this->api()->getByUid($this->model->getTypeName(), $uid, $this->options);
         $this->model->attachDocument($document);
 
         return $this->model;
@@ -333,7 +333,7 @@ class QueryBuilder
      */
     protected function pagerQuery($page = 1)
     {
-        return $this->api->query(
+        return $this->api()->query(
             $this->predicates,
             array_merge($this->options, ['page' => $page])
         );
@@ -370,7 +370,7 @@ class QueryBuilder
     /**
      * @return Api
      */
-    public function getApi()
+    public function api()
     {
         return $this->api;
     }
