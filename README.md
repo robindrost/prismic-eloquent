@@ -320,6 +320,19 @@ $page->articles->each(function ($item) {
 });
 ```
 
+## Singluar types
+
+The examples above are used with repeatable types e.g news etc. Prismic also
+allows you to create a single type content type.
+
+This is how you can query a single type.
+
+```
+$page = Page::single();
+```
+
+This will return an instance of a model with the data from the single type.
+
 ## Fallback to the API
 
 You can always access the Prismic Api directly in case you find youself in a situation
