@@ -5,9 +5,21 @@ namespace RobinDrost\PrismicEloquent\Tests;
 use Illuminate\Support\Collection;
 use RobinDrost\PrismicEloquent\Model;
 use RobinDrost\PrismicEloquent\Tests\Stubs\ModelStub;
+use RobinDrost\PrismicEloquent\Tests\Stubs\ModelSingleTypeStub;
 
 class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
 {
+    /**
+     * @test
+     */
+    public function itShouldFindASingleType()
+    {
+        $singlePage = ModelSingleTypeStub::single('single_page');
+
+        $this->assertInstanceOf(Model::class, $singlePage);
+        $this->assertEquals('single_page', $singlePage->type);
+    }
+
     /**
      * @test
      */

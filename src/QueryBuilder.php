@@ -51,6 +51,20 @@ class QueryBuilder
     }
 
     /**
+     * Retrieve a document that belongs to a single type. This method
+     * does not work for repreatable types.
+     *
+     * @return Model
+     */
+    public function single()
+    {
+        $document = $this->api()->getSingle($this->model->getTypeName(), $this->options);
+        $this->model->attachDocument($document);
+
+        return $this->model;
+    }
+
+    /**
      * Get a single item from Prismic by id.
      *
      * @param  string $id
