@@ -5,8 +5,9 @@
     "email": "robindrost@gmail.com",
     "homepage": "https://github.com/robindrost"
   }],
-  "version": "0.0.5",
-  "description": "A wrapper around the Prismic API that makes querying more like the eloquent way.",
+  "license": "MIT",
+  "version": "0.0.6",
+  "description": "Laravel package that let you use the Prismic api in a more (friendly) eloquent like way.",
   "require": {
     "php": "^7.1",
     "prismic/php-sdk": "dev-master",
