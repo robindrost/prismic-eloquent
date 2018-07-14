@@ -320,10 +320,26 @@ $page->articles->each(function ($item) {
 });
 ```
 
+## Fallback to the API
 
-## Caching
+You can always access the Prismic Api directly in case you find youself in a situation
+where a method is missing.
 
-You are free to cache the returned data in any way you want. Like with the normal Laravel models.
+Lets use the page model as an example:
+
+```
+Page::api()->query(YOUR_QUERY_LOGIC);
+```
+
+This is where you have to add your own logic. Please see the [prismic.io documentation](https://prismic.io/docs/php/query-the-api/how-to-query-the-api) on
+of to work with the api directly.
+
+The api will not return an instance of a model but a plain response. You can always
+attach this data by calling the ```$page->attachDocument($document)``` function.
+
+## References
+[Prismic documentation](https://prismic.io/docs/php/getting-started/with-the-php-starter-kit)
+[Prismic PHP kit](https://github.com/prismicio/php-kit)
 
 ## Feedback
 
