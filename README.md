@@ -2,8 +2,7 @@
 
 Use the Prismic Api in a more (friendly) eloquent like way.
 
-
-## Requirement
+## Requirements
 - Laravel 5.5+
 - Prismic SDK 4+
 
@@ -20,7 +19,7 @@ https://github.com/robindrost/prismic-eloquent/archive/master.zip
 
 ## Difference between default Prismic api kit
 
-#### How you normally use the prismic api kit
+#### How you normally use the Prismic api kit
 
 ```
 class PageController extends Controller
@@ -28,17 +27,17 @@ class PageController extends Controller
     public function index()
     {
         $api = Api::get('https://your-repo-name.prismic.io/api/v2');
-      
+
         $response = $api->query(
             Predicates::at('document.type', 'page'),
             [
                 'fetchLinks' => ['author.name', 'author.hair_color],
-                'orderings' => '[my.page.date desc]' 
+                'orderings' => '[my.page.date desc]'
             ]
         );
-        
+
         $result = $response->getResults()[0];
-        
+
         return view('page', [
             'page' => $result,
         ]);
@@ -50,7 +49,7 @@ page.blade.php:
 
 ```
 <h1>{{ $page->date->title }}</h1>
-``` 
+```
 
 #### How to use it with Prismic eloquent
 
@@ -62,7 +61,7 @@ class PageController extends Controller
         $page = Page::with('author.name', 'author.hair_color')
             ->orderBy('date desc')
             ->get();
-        
+
         return view('page', [
             'page' => $page,
         ]);
@@ -74,7 +73,7 @@ page.blade.php:
 
 ```
 <h1>{{ $page->title }}</h1>
-``` 
+```
 
 ## Configuration
 
@@ -95,10 +94,10 @@ use RobinDrost\PrismicEloquent\Model;
 
 class Page extends Model
 {
-	public function getTypeName()
-	{
-		return 'page';
-	}
+  public function getTypeName()
+  {
+    return 'page';
+  }
 }
 
 ```
@@ -107,7 +106,6 @@ By default you are able to retrieve any property from the data type.
 
 ```
 App\Page::findByUid(1)->title;
-
 ```
 
 Will return The response from the title field.
@@ -121,24 +119,22 @@ use RobinDrost\PrismicEloquent\Model;
 
 class Page extends Model
 {
-	public function getTitle()
-	{
-		return $this->attribute('title') . ' my super suffix.';
-	}
+  public function getTitle()
+  {
+    return $this->attribute('title') . ' my super suffix.';
+  }
 
-	public function getTypeName()
-	{
-		return 'page';
-	}
+  public function getTypeName()
+  {
+    return 'page';
+  }
 }
-
 ```
 
 Now calling the title property will use the defined get method.
 
 ```
 App\Page::find(1)->title;
-
 ```
 
 Will return:
@@ -157,14 +153,12 @@ By default the model will look for a get{Name} method, or a field with the given
 
 ```
 $page = Page::find('my-title');
-
 ```
 
 #### Find by document ID
 
 ```
 $page = Page::findById('w6yHsaAw98a');
-
 ```
 
 #### Collection of pages
@@ -219,7 +213,7 @@ Page::orderBy('field asc')->get();
 Page::orderBy('field desc')->get();
 ```
 
-#### Language's
+#### Language
 
 ```
 Page::language('nl-NL')->find('test-slug');
@@ -275,17 +269,18 @@ Relations are a bit different then you are used to in Eloquent. Relations are de
 ```
 class Page extends Model
 {
-	public function getMyAwesomeArticle()
-	{
-		return $this->relation(Article::class, 'my_awesome_article');
-	}
-	
-	public function getTypeName()
-	{
-		return 'page';
-	}
+  public function getMyAwesomeArticle()
+  {
+    return $this->relation(Article::class, 'my_awesome_article');
+  }
+
+  public function getTypeName()
+  {
+    return 'page';
+  }
 }
 ```
+
 You have to specify the related model and field on the current model.
 In this case the related content is an article and the data is currently in the field my_awesome_article.
 
@@ -300,19 +295,18 @@ Note that you need to specify the "content type" in this case "article".
 
 #### Group with relational fields
 
-
 ```
 class Page extends Model
 {
-	public function getMyAwesomeArticles()
-	{
-		return $this->relations(Article::class, 'mygroup_field', 'my_awesome_articles');
-	}
-	
-	public function getTypeName()
-	{
-		return 'page';
-	}
+  public function getMyAwesomeArticles()
+  {
+    return $this->relations(Article::class, 'mygroup_field', 'my_awesome_articles');
+  }
+
+  public function getTypeName()
+  {
+    return 'page';
+  }
 }
 ```
 
@@ -322,7 +316,7 @@ This will return an collection of the group field with loaded relations.
 $page = Page::with('article.title', 'article.body')->get();
 
 $page->articles->each(function ($item) {
-	dump($item->my_awesome_articles->title;
+  dump($item->my_awesome_articles->title;
 });
 ```
 
