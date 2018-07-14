@@ -153,14 +153,14 @@ By default the model will look for a get{Name} method, or a field with the given
 
 
 ## Query the Api
-####Find by UID
+#### Find by UID
 
 ```
 $page = Page::find('my-title');
 
 ```
 
-####Find by document ID
+#### Find by document ID
 
 ```
 $page = Page::findById('w6yHsaAw98a');
