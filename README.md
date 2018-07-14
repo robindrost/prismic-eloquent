@@ -331,6 +331,12 @@ This is how you can query a single type.
 $page = Page::single();
 ```
 
+You can still apply requirements like a language:
+
+```
+$page = Page::language('nl-NL')->single();
+```
+
 This will return an instance of a model with the data from the single type.
 
 ## Fallback to the API
