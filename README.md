@@ -1,10 +1,12 @@
 # Prismic Eloquent
-
 Use the Prismic Api in a more (friendly) eloquent like way.
 
 ## Requirements
 - Laravel 5.5+
 - Prismic SDK 4+
+
+## Example Laravel project
+[https://github.com/robindrost/prismic-eloquent-example](https://github.com/robindrost/prismic-eloquent-example)
 
 ## Installation
 Install through Composer:
