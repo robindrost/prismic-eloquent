@@ -240,6 +240,8 @@ abstract class Model
             }
 
             return $relation;
+        })->filter(function ($model) {
+            return $model instanceof Model;
         });
     }
 
@@ -267,6 +269,8 @@ abstract class Model
                 }
 
                 return $field;
+            })->filter(function ($group) use ($fieldName) {
+                return $group->{$fieldName} instanceof Model;
             });
         }
 
