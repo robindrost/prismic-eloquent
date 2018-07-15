@@ -45,12 +45,12 @@ abstract class Model
                 return $this->{$method}();
             }
 
-            if (! empty($fieldValue = $this->field($key))) {
-                return $fieldValue;
+            if ($this->hasField($key)) {
+                return $this->field($key);
             }
 
-            if (! empty($attributeValue = $this->attribute($key))) {
-                return $attributeValue;
+            if ($this->hasAttribute($key)) {
+                return $this->attribute($key);
             }
         }
 
@@ -129,6 +129,18 @@ abstract class Model
     }
 
     /**
+     * Check if the given field name is available.
+     *
+     * @param string $fieldName
+     *
+     * @return bool
+     */
+    public function hasField($fieldName)
+    {
+        return ! empty($this->field($fieldName));
+    }
+
+    /**
      * Returns a document attribute e.g id, uid, publication_date.
      *
      * @param string $key
@@ -139,6 +151,18 @@ abstract class Model
         if (property_exists($this->document, $key)) {
             return $this->document->{$key};
         }
+    }
+
+    /**
+     * Check if the given attribute name is available.
+     *
+     * @param string $attributeName
+     *
+     * @return bool
+     */
+    public function hasAttribute($attributeName)
+    {
+        return ! empty($this->attribute($attributeName));
     }
 
     /**
