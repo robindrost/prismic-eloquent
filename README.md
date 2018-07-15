@@ -94,10 +94,10 @@ use RobinDrost\PrismicEloquent\Model;
 
 class Page extends Model
 {
-  public function getTypeName()
-  {
-    return 'page';
-  }
+    public function getTypeName()
+    {
+        return 'page';
+    }
 }
 
 ```
@@ -119,15 +119,15 @@ use RobinDrost\PrismicEloquent\Model;
 
 class Page extends Model
 {
-  public function getTitle()
-  {
-    return $this->attribute('title') . ' my super suffix.';
-  }
+    public function getTitle()
+    {
+       return $this->attribute('title') . ' my super suffix.';
+    }
 
-  public function getTypeName()
-  {
-    return 'page';
-  }
+    public function getTypeName()
+    {
+       return 'page';
+    }
 }
 ```
 
@@ -269,15 +269,15 @@ Relations are a bit different then you are used to in Eloquent. Relations are de
 ```
 class Page extends Model
 {
-  public function getMyAwesomeArticle()
-  {
-    return $this->relation(Article::class, 'my_awesome_article');
-  }
+    public function getMyAwesomeArticle()
+    {
+        return $this->hasOne(Article::class, 'my_awesome_article');
+    }
 
-  public function getTypeName()
-  {
-    return 'page';
-  }
+    public function getTypeName()
+    {
+        return 'page';
+    }
 }
 ```
 
@@ -293,6 +293,25 @@ dump($page->article->body);
 
 Note that you need to specify the "content type" in this case "article".
 
+#### Has many relation fields
+
+You can also support the Prismic array syntax by suffixing your fields in Prismic with an array key.
+Lets say we have 3 fields with the given names in Prismic:
+- my_awesome_article[0]
+- my_awesome_article[1]
+- my_awesome_article[2]
+
+Note: You can only configure fields like this in the JSON editor of prismic.
+
+On the model you can use the hasMany method instead of the hasOne method:
+
+```
+public function getMyAwesomeArticle()
+{
+    return $this->hasMany(Article::class, 'my_awesome_article');
+}
+```
+
 #### Group with relational fields
 
 ```
@@ -300,12 +319,12 @@ class Page extends Model
 {
   public function getMyAwesomeArticles()
   {
-    return $this->relations(Article::class, 'mygroup_field', 'my_awesome_articles');
+      return $this->hasOneInGroup(Article::class, 'mygroup_field', 'my_awesome_articles');
   }
 
   public function getTypeName()
   {
-    return 'page';
+      return 'page';
   }
 }
 ```
@@ -316,9 +335,25 @@ This will return an collection of the group field with loaded relations.
 $page = Page::with('article.title', 'article.body')->get();
 
 $page->articles->each(function ($item) {
-  dump($item->my_awesome_articles->title;
+    dump($item->my_awesome_articles->title;
 });
 ```
+
+#### Support multiple model types on a relation
+All relational method support an array as the model name. Lets say your relation
+can be an article and a person:
+
+```
+public function getMyAwesomeArticle()
+{
+    return $this->hasOne([
+        'article => Article::class,
+        'person' => Person::class,
+    ], 'my_awesome_article');
+}
+```
+
+Note that the key must be the content type name of the relation.
 
 ## Singluar types
 

@@ -6,12 +6,22 @@ class ModelStub extends \RobinDrost\PrismicEloquent\Model
 {
     public function parent()
     {
-        return $this->relation(ModelStub::class, 'parent');
+        return $this->hasOne(ModelStub::class, 'parent');
+    }
+
+    public function parentWithMultipleModels()
+    {
+        return $this->hasOne(['page' => ModelStub::class], 'parent');
+    }
+
+    public function relatedPages()
+    {
+        return $this->hasMany(ModelStub::class, 'related');
     }
 
     public function linked()
     {
-        return $this->relations(ModelStub::class, 'other_pages', 'other_page');
+        return $this->hasOneInGroup(ModelStub::class, 'other_pages', 'other_page');
     }
 
     public function getTypeName()

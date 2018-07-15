@@ -163,16 +163,24 @@ abstract class Model
      * Define a relation on your related fields. Note that this field must
      * hold data that can be used by the given model.
      *
-     * $this->relation(Article::class, 'my_relational_field_name')
+     * $this->hasOne(Article::class, 'my_relational_field_name')
      *
-     * @param string $modelName
+     * or multiple model options
+     *
+     * $this->hasOne(['article' => Article::class, 'person' => Person::class], 'my_relational_field_name')
+     *
+     * @param string|array $modelName
      * @param string $fieldName
      *
      * @return Model
      */
-    protected function relation($modelName, $fieldName)
+    protected function hasOne($modelName, $fieldName)
     {
         if (! $this->document->data->{$fieldName} instanceof Model) {
+            if (is_array($modelName)) {
+                $modelName = $modelName[$this->document->data->{$fieldName}->type];
+            }
+
             $this->document->data->{$fieldName} = $modelName::newInstance($this->document->data->{$fieldName});
         }
 
@@ -180,9 +188,40 @@ abstract class Model
     }
 
     /**
+     * Define a relation on your related fields. Note that this field must
+     * hold data that can be used by the given model.
+     *
+     * $this->hasMany(Article::class, 'my_relational_field_name')
+     *
+     * You can define fields like this in Prismic with the array operator:
+     * my_relational_field_name[0]
+     * my_relational_field_name[1]
+     * my_relational_field_name[2]
+     *
+     * @param string $modelName
+     * @param string $fieldName
+     *
+     * @return Collection
+     */
+    protected function hasMany($modelName, $fieldName)
+    {
+        return collect($this->document->data->{$fieldName})->map(function ($relation) use ($modelName) {
+            if (! $relation instanceof Model) {
+                if (is_array($modelName)) {
+                    $modelName = $modelName[$relation->type];
+                }
+
+                $relation = $modelName::newInstance($relation);
+            }
+
+            return $relation;
+        });
+    }
+
+    /**
      * Define relation for relational fields that live inside a group field.
      *
-     * $this->relation(Article::class, 'group_field_name', 'relation_field_name')
+     * $this->hasOneInGroup(Article::class, 'group_field_name', 'relation_field_name')
      *
      * @param string $modelName
      * @param string $groupFieldName
@@ -190,11 +229,15 @@ abstract class Model
      *
      * @return Collection
      */
-    protected function relations($modelName, $groupFieldName, $fieldName)
+    protected function hasOneInGroup($modelName, $groupFieldName, $fieldName)
     {
         if ((! empty($group = $this->field($groupFieldName))) && is_array($group)) {
             return collect($group)->map(function ($field) use ($modelName, $fieldName) {
                 if (! $field->{$fieldName} instanceof Model) {
+                    if (is_array($modelName)) {
+                        $modelName = $modelName[$field->{$fieldName}->type];
+                    }
+
                     $field->{$fieldName} = $modelName::newInstance($field->{$fieldName});
                 }
 
