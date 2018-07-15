@@ -6,7 +6,7 @@
     "homepage": "https://github.com/robindrost"
   }],
   "license": "MIT",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Laravel package that let you use the Prismic api in a more (friendly) eloquent like way.",
   "require": {
     "php": "^7.1",
