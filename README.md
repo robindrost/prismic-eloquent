@@ -85,7 +85,7 @@ Copy the default configuration
 php artisan vendor:publish
 ```
 
-Start with changing the values inside the config/prismic-eloquent.php. You will need. a prismic repository URL and an access token to use the Prismic api.
+Start with changing the values inside the config/prismic-eloquent.php. You will need a prismic repository URL and an access token to use the Prismic api.
 
 ## Creating models
 
@@ -96,12 +96,21 @@ use RobinDrost\PrismicEloquent\Model;
 
 class Page extends Model
 {
-    public function getTypeName()
-    {
-        return 'page';
-    }
+
 }
 
+```
+
+By default the class name is used as the Prismic content type. This class
+asumes there is a content type 'page'. Class names are converted to lower snake case.
+
+You can always override the getTypeName method but this is not required.
+
+```
+public function getTypeName()
+{
+    return 'your_content_type_name';
+}
 ```
 
 By default you are able to retrieve any property from the data type.

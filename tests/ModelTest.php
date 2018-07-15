@@ -5,6 +5,7 @@ namespace RobinDrost\PrismicEloquent\Tests;
 use Illuminate\Support\Collection;
 use RobinDrost\PrismicEloquent\Tests\Stubs\ModelStub;
 use RobinDrost\PrismicEloquent\Tests\Stubs\ModelStubWithGetMethod;
+use RobinDrost\PrismicEloquent\Tests\Stubs\ModelStubNoType;
 
 class ModelTest extends \PHPUnit\Framework\TestCase
 {
@@ -23,6 +24,15 @@ class ModelTest extends \PHPUnit\Framework\TestCase
         ]));
 
         return parent::setUp();
+    }
+
+    /**
+     * @test
+     */
+    public function itUsesTheClassNameAsContentType()
+    {
+        $model = new ModelStubNoType;
+        $this->assertEquals($model->getTypeName(), 'model_stub_no_type');
     }
 
     /**

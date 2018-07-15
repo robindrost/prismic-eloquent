@@ -291,9 +291,17 @@ abstract class Model
     }
 
     /**
-     * Return the Prismic type content type name.
+     * Return the Prismic type content type name. By default it will
+     * use the current class name as the content type name.
+     *
+     * It will transform the current class to lower / snake case.
+     * You can always override this method when it fails.
      *
      * @return string
      */
-    abstract public function getTypeName();
+    public function getTypeName()
+    {
+        $fullPath = explode('\\', get_class($this));
+        return snake_case(array_pop($fullPath));
+    }
 }
