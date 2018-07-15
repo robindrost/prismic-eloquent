@@ -200,8 +200,8 @@ abstract class Model
      */
     protected function hasOne($modelName, $fieldName)
     {
-        if ($this->relationHasDocument($this->document->data->{$fieldName})
-            && ! $this->document->data->{$fieldName} instanceof Model) {
+        if (! $this->document->data->{$fieldName} instanceof Model
+            && $this->relationHasDocument($this->document->data->{$fieldName})) {
             if (is_array($modelName)) {
                 $modelName = $modelName[$this->document->data->{$fieldName}->type];
             }
@@ -231,7 +231,7 @@ abstract class Model
     protected function hasMany($modelName, $fieldName)
     {
         return collect($this->document->data->{$fieldName})->map(function ($relation) use ($modelName) {
-            if ($this->relationHasDocument($relation) && ! $relation instanceof Model) {
+            if (! $relation instanceof Model && $this->relationHasDocument($relation)) {
                 if (is_array($modelName)) {
                     $modelName = $modelName[$relation->type];
                 }
@@ -260,7 +260,7 @@ abstract class Model
     {
         if ((! empty($group = $this->field($groupFieldName))) && is_array($group)) {
             return collect($group)->map(function ($field) use ($modelName, $fieldName) {
-                if ($this->relationHasDocument($field->{$fieldName}) && ! $field->{$fieldName} instanceof Model) {
+                if (! $field->{$fieldName} instanceof Model && $this->relationHasDocument($field->{$fieldName})) {
                     if (is_array($modelName)) {
                         $modelName = $modelName[$field->{$fieldName}->type];
                     }
