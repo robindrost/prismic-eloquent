@@ -285,6 +285,7 @@ abstract class Model
     protected function relationHasDocument($relation)
     {
         return ! empty($relation)
+            && property_exists($relation, 'isBroken')
             && ! $relation->isBroken
             && property_exists($relation, 'id');
     }
