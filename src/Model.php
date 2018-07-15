@@ -200,7 +200,8 @@ abstract class Model
      */
     protected function hasOne($modelName, $fieldName)
     {
-        if (! $this->document->data->{$fieldName} instanceof Model) {
+        if ($this->relationHasDocument($this->document->data->{$fieldName})
+            && ! $this->document->data->{$fieldName} instanceof Model) {
             if (is_array($modelName)) {
                 $modelName = $modelName[$this->document->data->{$fieldName}->type];
             }
@@ -230,7 +231,7 @@ abstract class Model
     protected function hasMany($modelName, $fieldName)
     {
         return collect($this->document->data->{$fieldName})->map(function ($relation) use ($modelName) {
-            if (! $relation instanceof Model) {
+            if ($this->relationHasDocument($relation) && ! $relation instanceof Model) {
                 if (is_array($modelName)) {
                     $modelName = $modelName[$relation->type];
                 }
@@ -257,7 +258,7 @@ abstract class Model
     {
         if ((! empty($group = $this->field($groupFieldName))) && is_array($group)) {
             return collect($group)->map(function ($field) use ($modelName, $fieldName) {
-                if (! $field->{$fieldName} instanceof Model) {
+                if ($this->relationHasDocument($field->{$fieldName}) && ! $field->{$fieldName} instanceof Model) {
                     if (is_array($modelName)) {
                         $modelName = $modelName[$field->{$fieldName}->type];
                     }
@@ -270,6 +271,16 @@ abstract class Model
         }
 
         return collect([]);
+    }
+
+    /**
+     * Check if a relation has a document.
+     *
+     * @return bool
+     */
+    protected function relationHasDocument($relation)
+    {
+        return ! empty($relation) && property_exists($relation, 'id');
     }
 
     /**
