@@ -119,9 +119,16 @@ use RobinDrost\PrismicEloquent\Model;
 
 class Page extends Model
 {
+    // Document attribute
+    public function getId()
+    {
+       return $this->attribute('id');
+    }
+
+    // Document field
     public function getTitle()
     {
-       return $this->attribute('title') . ' my super suffix.';
+       return $this->field('title')[0]->text . ' my super suffix.';
     }
 
     public function getTypeName()
