@@ -282,7 +282,7 @@ Please note that you can only specify some fields as related fields as described
 
 #### Usage:
 
-Relations are a bit different then you are used to in Eloquent. Relations are defined in get methods (described above). Here is an example:
+You can either define a relationship through a method on your model or a get{FIELDNAME} method to make it accessible directly through properties.
 
 ```
 class Page extends Model
