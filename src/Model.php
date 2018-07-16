@@ -200,16 +200,7 @@ abstract class Model
      */
     protected function hasOne($modelName, $fieldName)
     {
-        if (! $this->document->data->{$fieldName} instanceof Model
-            && $this->relationHasDocument($this->document->data->{$fieldName})) {
-            if (is_array($modelName)) {
-                $modelName = $modelName[$this->document->data->{$fieldName}->type];
-            }
-
-            $this->document->data->{$fieldName} = $modelName::newInstance($this->document->data->{$fieldName});
-        }
-
-        return $this->document->data->{$fieldName};
+        return $this->relationToModel($this->document->data->{$fieldName}, $modelName);
     }
 
     /**
@@ -227,19 +218,16 @@ abstract class Model
      * @param string $fieldName
      *
      * @return Collection
+     * @throws \InvalidArguementException
      */
     protected function hasMany($modelName, $fieldName)
     {
-        return collect($this->document->data->{$fieldName})->map(function ($relation) use ($modelName) {
-            if (! $relation instanceof Model && $this->relationHasDocument($relation)) {
-                if (is_array($modelName)) {
-                    $modelName = $modelName[$relation->type];
-                }
+        if (! is_array($this->field($fieldName))) {
+            throw new \InvalidArgumentException("The field {$fieldName} is not an array.");
+        }
 
-                $relation = $modelName::newInstance($relation);
-            }
-
-            return $relation;
+        return collect($this->field($fieldName))->map(function ($relation) use ($modelName) {
+            return $this->relationToModel($relation, $modelName);
         })->filter(function ($model) {
             return $model instanceof Model;
         });
@@ -255,26 +243,20 @@ abstract class Model
      * @param string $fieldName
      *
      * @return Collection
+     * @throws \InvalidArguementException
      */
     protected function hasOneInGroup($modelName, $groupFieldName, $fieldName)
     {
-        if ((! empty($group = $this->field($groupFieldName))) && is_array($group)) {
-            return collect($group)->map(function ($field) use ($modelName, $fieldName) {
-                if (! $field->{$fieldName} instanceof Model && $this->relationHasDocument($field->{$fieldName})) {
-                    if (is_array($modelName)) {
-                        $modelName = $modelName[$field->{$fieldName}->type];
-                    }
-
-                    $field->{$fieldName} = $modelName::newInstance($field->{$fieldName});
-                }
-
-                return $field;
-            })->filter(function ($group) use ($fieldName) {
-                return $group->{$fieldName} instanceof Model;
-            });
+        if (! is_array($this->field($groupFieldName))) {
+            throw new \InvalidArgumentException("The field {$fieldName} is not an array.");
         }
 
-        return collect([]);
+        return collect($this->field($groupFieldName))->map(function ($group) use ($modelName, $fieldName) {
+            $group->{$fieldName} = $this->relationToModel($group->{$fieldName}, $modelName);
+            return $group;
+        })->filter(function ($group) use ($fieldName) {
+            return $group->{$fieldName} instanceof Model;
+        });
     }
 
     /**
@@ -288,6 +270,29 @@ abstract class Model
             && property_exists($relation, 'isBroken')
             && ! $relation->isBroken
             && property_exists($relation, 'id');
+    }
+
+    /**
+     * Transform a given relation to a model.
+     *
+     * @param stdClass $relation
+     * @param string $modelName
+     *
+     * @return Model|null
+     */
+    protected function relationToModel($relation, $modelName)
+    {
+        if ($relation instanceof Model) {
+            return $relation;
+        }
+
+        if ($this->relationHasDocument($relation)) {
+            if (is_array($modelName)) {
+                $modelName = $modelName[$relation->type];
+            }
+
+            return $modelName::newInstance($relation);
+        }
     }
 
     /**

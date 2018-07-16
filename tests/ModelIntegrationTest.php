@@ -144,7 +144,7 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
     /**
      * @test
      */
-    public function itCanResolveRelationships()
+    public function itCanResolveARelationshipInAGroup()
     {
         $page = ModelStub::with('page.title')
             ->where('document.id', 'W0XqJx8AAMLjIlBe')
