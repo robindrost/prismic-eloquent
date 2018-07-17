@@ -273,7 +273,9 @@ abstract class Model
         $ids = [];
 
         foreach ($this->field($fieldName) as $document) {
-            $ids[] = $document->id;
+            if (property_exists($document, 'id')) {
+                $ids[] = $document->id;
+            }
         }
 
         $this->relations[$fieldName] = $this->newQuery($typeModels)->whereIn('document.id', $ids)->get();
@@ -302,7 +304,9 @@ abstract class Model
         $ids = [];
 
         foreach ($this->field($groupName) as $group) {
-            $ids[] = $group->{$fieldName}->id;
+            if (property_exists($group, $fieldName) && property_exists($group->{$fieldName}, 'id')) {
+                $ids[] = $group->{$fieldName}->id;
+            }
         }
 
         $this->relations[$groupName] = $this->newQuery($typeModels)->whereIn('document.id', $ids)->get();
