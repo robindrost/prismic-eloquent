@@ -275,10 +275,12 @@ Page::wherePublicationDate('may', 'month')->where('field', 'value')->get();
 
 ## Relationships
 
-Prismic offers an option to fetch linked content (throug content relation field).
-Link: https://prismic.io/docs/php/query-the-api/fetch-linked-document-fields
+Relationships are loaded through new queries. You can either "eager" load the relationships
+through the "with" method or load them on the fly. Relationships are stored inside the model
+and never loaded twice.
 
-Please note that you can only specify some fields as related fields as described in the documentation of Prismic (link above).
+The package somewhat offers eager loading by collecting all id's of a row and query the
+api on a whereIn predicate.
 
 #### Usage:
 
@@ -287,29 +289,33 @@ You can either define a relationship through a method on your model or a get{FIE
 ```
 class Page extends Model
 {
-    public function getMyAwesomeArticle()
+    public function article()
     {
-        return $this->hasOne(Article::class, 'my_awesome_article');
-    }
-
-    public function getTypeName()
-    {
-        return 'page';
+        return $this->hasOne('my_awesome_article', ['article' => Article::class]);
     }
 }
 ```
 
-You have to specify the related model and field on the current model.
+You have to specify the field name and an array of possible models that could get returned.
 In this case the related content is an article and the data is currently in the field my_awesome_article.
 
-```
-$page = Page::with('article.title', 'article.body')->get();
+Eager loaded
 
-dump($page->article->title);
-dump($page->article->body);
+```
+$page = Page::with('article')->first();
+
+dump($page->my_awesome_article->title);
+dump($page->my_awesome_article->body);
 ```
 
-Note that you need to specify the "content type" in this case "article".
+or
+
+```
+$page = Page::first();
+
+dump($page->article()->title);
+dump($page->article()->body);
+```
 
 #### Has many relation fields
 
@@ -324,10 +330,26 @@ Note: You can only configure fields like this in the JSON editor of prismic.
 On the model you can use the hasMany method instead of the hasOne method:
 
 ```
-public function getMyAwesomeArticle()
+public function articles()
 {
-    return $this->hasMany(Article::class, 'my_awesome_article');
+    return $this->hasMany('my_awesome_articles', ['article' => Article::class]);
 }
+```
+
+Eager loading
+
+```
+$page = Page::with('articles')->first();
+
+dump($page->my_awesome_articles);
+```
+
+Loading on render
+
+```
+$page = Page::first();
+
+dump($page->articles());
 ```
 
 #### Group with relational fields
@@ -335,43 +357,44 @@ public function getMyAwesomeArticle()
 ```
 class Page extends Model
 {
-  public function getMyAwesomeArticles()
+  public function articles()
   {
-      return $this->hasOneInGroup(Article::class, 'mygroup_field', 'my_awesome_articles');
-  }
-
-  public function getTypeName()
-  {
-      return 'page';
+      return $this->hasManyThroughGroup('mygroup_field', 'my_awesome_articles', ['article' => Article::class]);
   }
 }
 ```
 
 This will return an collection of the group field with loaded relations.
 
-```
-$page = Page::with('article.title', 'article.body')->get();
+Eager loaded
 
-$page->articles->each(function ($item) {
-    dump($item->my_awesome_articles->title;
-});
+```
+$page = Page::with('articles')->first();
+
+dump($page->my_awesome_articles);
+```
+
+Or
+
+```
+$page = Page::first();
+
+dump($page->articles());
 ```
 
 #### Support multiple model types on a relation
-All relational method support an array as the model name. Lets say your relation
-can be an article and a person:
+All relational method support an option to specify multiple model option since Prismic offers this option.
+Lets say your relation can be an article and a person:
 
 ```
 public function getMyAwesomeArticle()
 {
-    return $this->hasOne([
+    return $this->hasOne('my_relational_field_name', [
         'article => Article::class,
         'person' => Person::class,
-    ], 'my_awesome_article');
+    ]);
 }
 ```
-
-Note that the key must be the content type name of the relation.
 
 ## Singluar types
 

@@ -18,6 +18,11 @@ abstract class Model
     protected $perPage = 10;
 
     /**
+     * @var array
+     */
+    protected $relations = [];
+
+    /**
      * Model constructor.
      *
      * @param \stdClass $document|null
@@ -43,6 +48,10 @@ abstract class Model
 
             if (method_exists($this, $method)) {
                 return $this->{$method}();
+            }
+
+            if ($this->hasRelation($key)) {
+                return $this->relation($key);
             }
 
             if ($this->hasField($key)) {
@@ -166,13 +175,39 @@ abstract class Model
     }
 
     /**
+     * Returns a relation.
+     *
+     * @param string $key
+     * @return mixed|null
+     */
+    public function relation($key)
+    {
+        return $this->relations[$key];
+    }
+
+    /**
+     * Check if the given attribute name is available.
+     *
+     * @param string $relationName
+     *
+     * @return bool
+     */
+    public function hasRelation($relationName)
+    {
+        return array_key_exists($relationName, $this->relations);
+    }
+
+    /**
      * Return a new query builder instance.
+     *
+     * @param array $possibleTypes
+     *  ['article' => Article::class, 'blog_post' => BlogPost::class]
      *
      * @return QueryBuilder
      */
-    protected function newQuery()
+    protected function newQuery(array $possibleTypes = [])
     {
-        return new QueryBuilder($this);
+        return new QueryBuilder($this, $possibleTypes);
     }
 
     /**
@@ -187,112 +222,92 @@ abstract class Model
      * Define a relation on your related fields. Note that this field must
      * hold data that can be used by the given model.
      *
-     * $this->hasOne(Article::class, 'my_relational_field_name')
+     * $this->hasOne('my_relational_field_name', ['article' => Article::class])
      *
-     * or multiple model options
+     * or multiple content type options
      *
-     * $this->hasOne(['article' => Article::class, 'person' => Person::class], 'my_relational_field_name')
+     * $this->hasOne('my_relational_field_name', ['article' => Article::class, 'person' => Person::class])
      *
-     * @param string|array $modelName
      * @param string $fieldName
+     * @param array  $typeModels
      *
      * @return Model
      */
-    protected function hasOne($modelName, $fieldName)
+    protected function hasOne($fieldName, array $typeModels)
     {
-        return $this->relationToModel($this->document->data->{$fieldName}, $modelName);
+        if ($this->hasRelation($fieldName)) {
+            return $this->relation($fieldName);
+        }
+
+        $this->relations[$fieldName] = $this->newQuery($typeModels)->findById($this->field($fieldName)->id);
+
+        return $this->relation($fieldName);
     }
 
     /**
      * Define a relation on your related fields. Note that this field must
      * hold data that can be used by the given model.
      *
-     * $this->hasMany(Article::class, 'my_relational_field_name')
+     * $this->hasMany('my_relational_field_name', ['article' => Article::class])
+     *
+     * or multiple content type options
+     *
+     * $this->hasMany('my_relational_field_name', ['article' => Article::class, 'person' => Person::class])
      *
      * You can define fields like this in Prismic with the array operator:
      * my_relational_field_name[0]
      * my_relational_field_name[1]
      * my_relational_field_name[2]
      *
-     * @param string $modelName
      * @param string $fieldName
      *
      * @return Collection
      * @throws \InvalidArguementException
      */
-    protected function hasMany($modelName, $fieldName)
+    protected function hasMany($fieldName, array $typeModels)
     {
-        if (! is_array($this->field($fieldName))) {
-            throw new \InvalidArgumentException("The field {$fieldName} is not an array.");
+        if ($this->hasRelation($fieldName)) {
+            return $this->relation($fieldName);
         }
 
-        return collect($this->field($fieldName))->map(function ($relation) use ($modelName) {
-            return $this->relationToModel($relation, $modelName);
-        })->filter(function ($model) {
-            return $model instanceof Model;
-        });
+        $ids = [];
+
+        foreach ($this->field($fieldName) as $document) {
+            $ids[] = $document->id;
+        }
+
+        $this->relations[$fieldName] = $this->newQuery($typeModels)->whereIn('document.id', $ids)->get();
+
+        return $this->relation($fieldName);
     }
 
     /**
      * Define relation for relational fields that live inside a group field.
      *
-     * $this->hasOneInGroup(Article::class, 'group_field_name', 'relation_field_name')
+     * $this->hasManyThroughGroup('group_field_name', 'relation_field_name', Article::class)
      *
-     * @param string $modelName
-     * @param string $groupFieldName
+     * @param string $groupName
      * @param string $fieldName
+     * @param array  $typeModels
      *
      * @return Collection
      * @throws \InvalidArguementException
      */
-    protected function hasOneInGroup($modelName, $groupFieldName, $fieldName)
+    protected function hasManyThroughGroup($groupName, $fieldName, array $typeModels)
     {
-        if (! is_array($this->field($groupFieldName))) {
-            throw new \InvalidArgumentException("The field {$fieldName} is not an array.");
+        if ($this->hasRelation($groupName)) {
+            return $this->relation($groupName);
         }
 
-        return collect($this->field($groupFieldName))->map(function ($group) use ($modelName, $fieldName) {
-            $group->{$fieldName} = $this->relationToModel($group->{$fieldName}, $modelName);
-            return $group;
-        })->filter(function ($group) use ($fieldName) {
-            return $group->{$fieldName} instanceof Model;
-        });
-    }
+        $ids = [];
 
-    /**
-     * Check if a relation has a document.
-     *
-     * @return bool
-     */
-    protected function relationHasDocument($relation)
-    {
-        return ! empty($relation)
-            && property_exists($relation, 'isBroken')
-            && ! $relation->isBroken
-            && property_exists($relation, 'id');
-    }
-
-    /**
-     * Transform a given relation to a model.
-     *
-     * @param stdClass $relation
-     * @param string $modelName
-     *
-     * @return Model|null
-     */
-    protected function relationToModel($relation, $modelName)
-    {
-        if ($relation instanceof Model) {
-            return $relation;
+        foreach ($this->field($groupName) as $group) {
+            $ids[] = $group->{$fieldName}->id;
         }
 
-        if ($this->relationHasDocument($relation)) {
-            if (is_array($modelName)) {
-                $modelName = $modelName[$relation->type];
-            }
+        $this->relations[$groupName] = $this->newQuery($typeModels)->whereIn('document.id', $ids)->get();
 
-            return $modelName::newInstance($relation);
-        }
+        return $this->relation($groupName);
     }
 
     /**
