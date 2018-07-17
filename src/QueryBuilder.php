@@ -41,29 +41,13 @@ class QueryBuilder
         'year',
     ];
 
-    /**
-     * @var array
-     */
-    protected $typeMapping = [];
-
-    /**
-     * @var array
-     */
-    protected $relationships = [];
-
-    public function __construct(Model $model, $contentTypes = [])
+    public function __construct(Model $model)
     {
         $this->model = $model;
         $this->api = resolve(Api::class);
 
         $this->addOption('pageSize', 100);
-
-        if (empty($possibleTypes)) {
-            $this->addPredicate(Predicates::at('document.type', $this->model->getTypeName()));
-        } else {
-            $this->addPredicate(Predicates::at('document.type', array_values($contentTypes)));
-            $this->typeMapping = $contentTypes;
-        }
+        $this->addPredicate(Predicates::at('document.type', $this->model->getTypeName()));
     }
 
     /**
@@ -75,10 +59,9 @@ class QueryBuilder
     public function single()
     {
         $document = $this->api()->getSingle($this->model->getTypeName(), $this->options);
-        $model = $this->documentToModel($document);
-        $this->loadRelationshipsForModel($model);
+        $this->model->attachDocument($document);
 
-        return $model;
+        return $this->model;
     }
 
     /**
@@ -90,10 +73,9 @@ class QueryBuilder
     public function findById($id)
     {
         $document = $this->api()->getByID($id, $this->options);
-        $model = $this->documentToModel($document);
-        $this->loadRelationshipsForModel($model);
+        $this->model->attachDocument($document);
 
-        return $model;
+        return $this->model;
     }
 
     /**
@@ -105,10 +87,9 @@ class QueryBuilder
     public function find($uid)
     {
         $document = $this->api()->getByUid($this->model->getTypeName(), $uid, $this->options);
-        $model = $this->documentToModel($document);
-        $this->loadRelationshipsForModel($model);
+        $this->model->attachDocument($document);
 
-        return $model;
+        return $this->model;
     }
 
     /**
@@ -143,12 +124,10 @@ class QueryBuilder
             }
         }
 
-        $models = array_map(function ($document) {
-            $model = $this->documentToModel($document);
-            $this->loadRelationshipsForModel($model);
-
-            return $model;
+        $models = array_map(function ($result) {
+            return $this->model::newInstance($result);
         }, $results);
+
         return $this->model->newCollection($models);
     }
 
@@ -174,9 +153,9 @@ class QueryBuilder
         $query = $this->pagerQuery($page);
         $results = $query->results;
 
-        $models = array_map(function ($document) {
-            $model = $this->documentToModel($document);
-            $this->loadRelationshipsForModel($model);
+        $models = array_map(function ($result) {
+            $model = clone $this->model;
+            $model->attachDocument($result);
 
             return $model;
         }, $results);
@@ -285,9 +264,9 @@ class QueryBuilder
      *
      * @return QueryBuilder
      */
-    public function with(...$relationships)
+    public function with(...$fields)
     {
-        $this->relationships = $relationships;
+        $this->options['fetchLinks'] = $fields;
         return $this;
     }
 
@@ -400,33 +379,6 @@ class QueryBuilder
     protected function isDocumentBaseField($fieldName)
     {
         return explode('.', $fieldName)[0] == 'document';
-    }
-
-    /**
-     * Map a given document to a model.
-     *
-     * @param  stdClass $document
-     * @return Model
-     */
-    protected function documentToModel($document)
-    {
-        if (! empty($this->typeMapping)) {
-            $this->typeMapping[$result->type]::newInstace($document);
-        } else {
-            return $this->model::newInstance($document);
-        }
-    }
-
-    /**
-     * Call all the set relationships if any.
-     *
-     * @param Model $model
-     */
-    protected function loadRelationshipsForModel(Model $model)
-    {
-        foreach ($this->relationships as $type => $relationship) {
-            $model->{$relationship}();
-        }
     }
 
     /**

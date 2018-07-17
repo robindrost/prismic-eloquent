@@ -116,17 +116,19 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
      */
     public function itCanResolveARelationship()
     {
-        $page = ModelStub::with('parent')->findById('W0XqJx8AAMLjIlBe');
-        $this->assertEquals($page->parent->title[0]->text, 'B');
+        $page = ModelStub::with('page.title')->findById('W0XqJx8AAMLjIlBe');
+
+        $this->assertEquals($page->parent()->title[0]->text, 'B');
     }
 
     /**
      * @test
      */
-    public function itCanResolveARelationshipNotLoaded()
+    public function itCanResolveARelationshipWithMultipleModelOptions()
     {
-        $page = ModelStub::findById('W0XqJx8AAMLjIlBe');
-        $this->assertEquals($page->parent()->title[0]->text, 'B');
+        $page = ModelStub::with('page.title')->findById('W0XqJx8AAMLjIlBe');
+
+        $this->assertEquals($page->parentWithMultipleModels()->title[0]->text, 'B');
     }
 
     /**
@@ -134,16 +136,8 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
      */
     public function itCanHandleAHasManyRelationship()
     {
-        $page = ModelStub::with('relatedPages')->findById('W0XqJx8AAMLjIlBe');
-        $this->assertInstanceOf(Collection::class, $page->related);
-    }
+        $page = ModelStub::with('page.title')->findById('W0XqJx8AAMLjIlBe');
 
-    /**
-     * @test
-     */
-    public function itCanHandleAHasManyRelationshipNotLoaded()
-    {
-        $page = ModelStub::with('relatedPages')->findById('W0XqJx8AAMLjIlBe');
         $this->assertInstanceOf(Collection::class, $page->relatedPages());
     }
 
@@ -152,21 +146,12 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
      */
     public function itCanResolveARelationshipInAGroup()
     {
-        $page = ModelStub::with('linked')->findById('W0XqJx8AAMLjIlBe');
-
-        $this->assertInstanceOf(Collection::class, $page->other_pages);
-        $this->assertEquals($page->other_pages->first()->id, 'W0dLmh8AALY7KGdD');
-    }
-
-    /**
-     * @test
-     */
-    public function itCanResolveARelationshipInAGroupNotLoaded()
-    {
-        $page = ModelStub::findById('W0XqJx8AAMLjIlBe');
+        $page = ModelStub::with('page.title')
+            ->where('document.id', 'W0XqJx8AAMLjIlBe')
+            ->first();
 
         $this->assertInstanceOf(Collection::class, $page->linked());
-        $this->assertEquals($page->linked()->first()->id, 'W0dLmh8AALY7KGdD');
+        $this->assertEquals($page->linked()->first()->other_page->id, 'W0dLmh8AALY7KGdD');
     }
 
     /**

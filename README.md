@@ -275,47 +275,41 @@ Page::wherePublicationDate('may', 'month')->where('field', 'value')->get();
 
 ## Relationships
 
-Relationships are loaded through new queries. You can either "eager" load the relationships
-through the "with" method or load them on the fly. Relationships are stored inside the model
-and never loaded twice.
+Prismic offers an option to fetch linked content (throug content relation field).
+Link: https://prismic.io/docs/php/query-the-api/fetch-linked-document-fields
 
-The package somewhat offers eager loading by collecting all id's of a row and query the
-api on a whereIn predicate.
+Please note that you can only specify some fields as related fields as described in the documentation of Prismic (link above).
 
 #### Usage:
 
-You can either define a relationship through a method on your model or a get{FIELDNAME} method to make it accessible directly through properties.
+Relations are a bit different then you are used to in Eloquent. Relations are defined in get methods (described above). Here is an example:
 
 ```
 class Page extends Model
 {
-    public function article()
+    public function getMyAwesomeArticle()
     {
-        return $this->hasOne('my_awesome_article', ['article' => Article::class]);
+        return $this->hasOne(Article::class, 'my_awesome_article');
+    }
+
+    public function getTypeName()
+    {
+        return 'page';
     }
 }
 ```
 
-You have to specify the field name and an array of possible models that could get returned.
+You have to specify the related model and field on the current model.
 In this case the related content is an article and the data is currently in the field my_awesome_article.
 
-Eager loaded
-
 ```
-$page = Page::with('article')->first();
+$page = Page::with('article.title', 'article.body')->get();
 
-dump($page->my_awesome_article->title);
-dump($page->my_awesome_article->body);
+dump($page->article->title);
+dump($page->article->body);
 ```
 
-or
-
-```
-$page = Page::first();
-
-dump($page->article()->title);
-dump($page->article()->body);
-```
+Note that you need to specify the "content type" in this case "article".
 
 #### Has many relation fields
 
@@ -330,26 +324,10 @@ Note: You can only configure fields like this in the JSON editor of prismic.
 On the model you can use the hasMany method instead of the hasOne method:
 
 ```
-public function articles()
+public function getMyAwesomeArticle()
 {
-    return $this->hasMany('my_awesome_articles', ['article' => Article::class]);
+    return $this->hasMany(Article::class, 'my_awesome_article');
 }
-```
-
-Eager loading
-
-```
-$page = Page::with('articles')->first();
-
-dump($page->my_awesome_articles);
-```
-
-Loading on render
-
-```
-$page = Page::first();
-
-dump($page->articles());
 ```
 
 #### Group with relational fields
@@ -357,44 +335,43 @@ dump($page->articles());
 ```
 class Page extends Model
 {
-  public function articles()
+  public function getMyAwesomeArticles()
   {
-      return $this->hasManyThroughGroup('mygroup_field', 'my_awesome_articles', ['article' => Article::class]);
+      return $this->hasOneInGroup(Article::class, 'mygroup_field', 'my_awesome_articles');
+  }
+
+  public function getTypeName()
+  {
+      return 'page';
   }
 }
 ```
 
 This will return an collection of the group field with loaded relations.
 
-Eager loaded
-
 ```
-$page = Page::with('articles')->first();
+$page = Page::with('article.title', 'article.body')->get();
 
-dump($page->my_awesome_articles);
-```
-
-Or
-
-```
-$page = Page::first();
-
-dump($page->articles());
+$page->articles->each(function ($item) {
+    dump($item->my_awesome_articles->title;
+});
 ```
 
 #### Support multiple model types on a relation
-All relational method support an option to specify multiple model option since Prismic offers this option.
-Lets say your relation can be an article and a person:
+All relational method support an array as the model name. Lets say your relation
+can be an article and a person:
 
 ```
 public function getMyAwesomeArticle()
 {
-    return $this->hasOne('my_relational_field_name', [
+    return $this->hasOne([
         'article => Article::class,
         'person' => Person::class,
-    ]);
+    ], 'my_awesome_article');
 }
 ```
+
+Note that the key must be the content type name of the relation.
 
 ## Singluar types
 
