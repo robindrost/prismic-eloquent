@@ -18,6 +18,11 @@ abstract class Model
     protected $perPage = 10;
 
     /**
+     * @var bool
+     */
+    protected $fieldsToSnakeCase = true;
+
+    /**
      * Model constructor.
      *
      * @param \stdClass $document|null
@@ -121,6 +126,10 @@ abstract class Model
      */
     public function field($key)
     {
+        if ($this->fieldsToSnakeCase) {
+            $key = snake_case($key);
+        }
+
         if (! empty($data = $this->attribute('data'))) {
             if (property_exists($data, $key)) {
                 return $data->{$key};
@@ -137,6 +146,10 @@ abstract class Model
      */
     public function hasField($fieldName)
     {
+        if ($this->fieldsToSnakeCase) {
+            $fieldName = snake_case($fieldName);
+        }
+
         return ! empty($this->field($fieldName));
     }
 
