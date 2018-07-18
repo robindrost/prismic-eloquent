@@ -65,6 +65,7 @@ class QueryBuilder
     {
         $document = $this->api()->getSingle($this->model::getTypeName(), $this->options);
         $this->model->attachDocument($document);
+        $this->resolveRelationships($this->model);
 
         return $this->model;
     }
@@ -94,6 +95,7 @@ class QueryBuilder
     {
         $document = $this->api()->getByUid($this->model::getTypeName(), $uid, $this->options);
         $this->model->attachDocument($document);
+        $this->resolveRelationships($this->model);
 
         return $this->model;
     }
@@ -131,7 +133,10 @@ class QueryBuilder
         }
 
         $models = array_map(function ($result) {
-            return $this->model::newInstance($result);
+            $model = $this->model::newInstance($result);
+            $this->resolveRelationships($model);
+
+            return $model;
         }, $results);
 
         return $this->model->newCollection($models);
@@ -160,8 +165,8 @@ class QueryBuilder
         $results = $query->results;
 
         $models = array_map(function ($result) {
-            $model = clone $this->model;
-            $model->attachDocument($result);
+            $model = $this->model->newInstance($result);
+            $this->resolveRelationships($model);
 
             return $model;
         }, $results);
