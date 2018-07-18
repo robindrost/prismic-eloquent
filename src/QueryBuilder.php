@@ -41,13 +41,18 @@ class QueryBuilder
         'year',
     ];
 
+    /**
+     * @var array
+     */
+    protected $relationships = [];
+
     public function __construct(Model $model)
     {
         $this->model = $model;
         $this->api = resolve(Api::class);
 
         $this->addOption('pageSize', 100);
-        $this->addPredicate(Predicates::at('document.type', $this->model->getTypeName()));
+        $this->addPredicate(Predicates::at('document.type', $this->model::getTypeName()));
     }
 
     /**
@@ -58,7 +63,7 @@ class QueryBuilder
      */
     public function single()
     {
-        $document = $this->api()->getSingle($this->model->getTypeName(), $this->options);
+        $document = $this->api()->getSingle($this->model::getTypeName(), $this->options);
         $this->model->attachDocument($document);
 
         return $this->model;
@@ -74,6 +79,7 @@ class QueryBuilder
     {
         $document = $this->api()->getByID($id, $this->options);
         $this->model->attachDocument($document);
+        $this->resolveRelationships($this->model);
 
         return $this->model;
     }
@@ -86,7 +92,7 @@ class QueryBuilder
      */
     public function find($uid)
     {
-        $document = $this->api()->getByUid($this->model->getTypeName(), $uid, $this->options);
+        $document = $this->api()->getByUid($this->model::getTypeName(), $uid, $this->options);
         $this->model->attachDocument($document);
 
         return $this->model;
@@ -193,7 +199,7 @@ class QueryBuilder
     public function where($field, $value)
     {
         if (! $this->isDocumentBaseField($field)) {
-            $field = "my.{$this->model->getTypeName()}.{$field}";
+            $field = "my.{$this->model::getTypeName()}.{$field}";
         }
 
         $this->addPredicate(Predicates::at($field, $value));
@@ -211,7 +217,7 @@ class QueryBuilder
     public function whereIn($field, array $values)
     {
         if (! $this->isDocumentBaseField($field)) {
-            $field = "my.{$this->model->getTypeName()}.{$field}";
+            $field = "my.{$this->model::getTypeName()}.{$field}";
         }
 
         $this->addPredicate(Predicates::any($field, $values));
@@ -259,14 +265,35 @@ class QueryBuilder
      *
      * @see https://prismic.io/docs/php/query-the-api/fetch-linked-document-fields
      *
-     * @param array $fields
-     *  e.g: article.title, article.body
+     * @param array $methods
      *
      * @return QueryBuilder
      */
-    public function with(...$fields)
+    public function with(array $methods)
     {
-        $this->options['fetchLinks'] = $fields;
+        $toFetch = [];
+
+        foreach ($methods as $method) {
+            $relation = $this->model->{$method}();
+
+            if (is_array($relation->getModel())) {
+                foreach ($relation->getModel() as $type => $model) {
+                    foreach ($relation->getFields()[$type] as $field) {
+                        $toFetch[] = "{$type}.{$field}";
+                    }
+                }
+            } else {
+                $contentType = $relation->getModel()::getTypeName();
+
+                foreach ($relation->getFields() as $field) {
+                    $toFetch[] = "{$contentType}.{$field}";
+                }
+            }
+
+            $this->relationships[] = $relation;
+        }
+
+        $this->addOption('fetchLinks', implode(',', $toFetch));
         return $this;
     }
 
@@ -282,7 +309,7 @@ class QueryBuilder
      */
     public function orderBy($field)
     {
-        $this->addOption('orderings', "[my.{$this->model->getTypeName()}.{$field}]");
+        $this->addOption('orderings', "[my.{$this->model::getTypeName()}.{$field}]");
         return $this;
     }
 
@@ -355,6 +382,18 @@ class QueryBuilder
     }
 
     /**
+     * Resolve relationships on the given model.
+     *
+     * @param Model $model
+     */
+    protected function resolveRelationships(Model $model)
+    {
+        foreach ($this->relationships as $relation) {
+            $relation->resolve($model);
+        }
+    }
+
+    /**
      * Run a pager query.
      *
      * @param int $page
@@ -377,7 +416,7 @@ class QueryBuilder
     {
         if (! empty($fields)) {
             $fields = array_map(function ($field) {
-                return "my.{$this->model->getTypeName()}.{$field}";
+                return "my.{$this->model::getTypeName()}.{$field}";
             }, $fields);
 
             $this->addOption('fetch', implode(',', $fields));

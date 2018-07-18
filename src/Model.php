@@ -119,7 +119,7 @@ abstract class Model
      * @param string $key
      * @return mixed|null
      */
-    protected function field($key)
+    public function field($key)
     {
         if (! empty($data = $this->attribute('data'))) {
             if (property_exists($data, $key)) {
@@ -146,7 +146,7 @@ abstract class Model
      * @param string $key
      * @return mixed|null
      */
-    protected function attribute($key)
+    public function attribute($key)
     {
         if (property_exists($this->document, $key)) {
             return $this->document->{$key};
@@ -187,20 +187,21 @@ abstract class Model
      * Define a relation on your related fields. Note that this field must
      * hold data that can be used by the given model.
      *
-     * $this->hasOne(Article::class, 'my_relational_field_name')
+     * $this->hasOne(Article::class, 'related_article', ['title', 'body'])
      *
      * or multiple model options
      *
-     * $this->hasOne(['article' => Article::class, 'person' => Person::class], 'my_relational_field_name')
+     * $this->hasOne(['article' => Article::class, 'person' => Person::class], 'related_article', ['title'])
      *
      * @param string|array $modelName
      * @param string $fieldName
+     * @param array $fieldsToFetch
      *
-     * @return Model
+     * @return Relationship
      */
-    protected function hasOne($modelName, $fieldName)
+    protected function hasOne($modelName, $fieldName, array $fieldsToFetch)
     {
-        return $this->relationToModel($this->document->data->{$fieldName}, $modelName);
+        return new Relationship($modelName, $fieldName, $fieldsToFetch);
     }
 
     /**
@@ -211,99 +212,19 @@ abstract class Model
      * This method will overwrite the array of the group with a collection
      * that holds all the relational data.
      *
-     * $this->hasMany(Article::class, 'my_group_name', 'my_relational_field')
+     * $this->hasMany(Article::class, 'group_field', 'field', ['title', 'body'])
      *
      * @param string $modelName
      * @param string $groupField
      * @param string $fieldName
+     * @param array $fieldsToFetch
      *
      * @return Collection
      * @throws \InvalidArguementException
      */
-    protected function hasMany($modelName, $groupField, $fieldName)
+    protected function hasMany($modelName, $groupField, $fieldName, array $fieldsToFetch)
     {
-        if ($this->field($groupField) instanceof Collection) {
-            return $this->field($groupField);
-        }
-
-        $this->data->{$groupField} = collect($this->field($groupField))
-            ->map(function ($group) use ($fieldName, $modelName) {
-                return $this->relationToModel($group->{$fieldName}, $modelName);
-            })->filter(function ($model) {
-                return $model instanceof Model;
-            });
-
-        return $this->field($groupField);
-    }
-
-    /**
-     * This method will look for the given relation in a group and replace
-     * it with a model. The group will be transformed to a collection but
-     * keeps it original other fields as well.
-     *
-     * Use this method when the group has other data then relational data
-     * as well.
-     *
-     * $this->hasManyThroughGroup(Article::class, 'group_field_name', 'relation_field_name')
-     *
-     * @param string $modelName
-     * @param string $groupField
-     * @param string $fieldName
-     *
-     * @return Collection
-     * @throws \InvalidArguementException
-     */
-    protected function hasManyThroughGroup($modelName, $groupField, $fieldName)
-    {
-        if ($this->field($groupField) instanceof Collection) {
-            return $this->field($groupField);
-        }
-
-        $this->data->{$groupField} = collect($this->field($groupField))
-            ->map(function ($group) use ($modelName, $fieldName) {
-                $group->{$fieldName} = $this->relationToModel($group->{$fieldName}, $modelName);
-                return $group;
-            })->filter(function ($group) use ($fieldName) {
-                return $group->{$fieldName} instanceof Model;
-            });
-
-        return $this->field($groupField);
-    }
-
-    /**
-     * Check if a relation has a document.
-     *
-     * @return bool
-     */
-    protected function relationHasDocument($relation)
-    {
-        return ! empty($relation)
-            && property_exists($relation, 'isBroken')
-            && ! $relation->isBroken
-            && property_exists($relation, 'id');
-    }
-
-    /**
-     * Transform a given relation to a model.
-     *
-     * @param stdClass $relation
-     * @param string $modelName
-     *
-     * @return Model|null
-     */
-    protected function relationToModel($relation, $modelName)
-    {
-        if ($relation instanceof Model) {
-            return $relation;
-        }
-
-        if ($this->relationHasDocument($relation)) {
-            if (is_array($modelName)) {
-                $modelName = $modelName[$relation->type];
-            }
-
-            return $modelName::newInstance($relation);
-        }
+        return new Relationship($modelName, $fieldName, $fieldsToFetch, $groupField);
     }
 
     /**
@@ -315,9 +236,9 @@ abstract class Model
      *
      * @return string
      */
-    public function getTypeName()
+    public static function getTypeName()
     {
-        $fullPath = explode('\\', get_class($this));
+        $fullPath = explode('\\', get_called_class());
         return snake_case(array_pop($fullPath));
     }
 }

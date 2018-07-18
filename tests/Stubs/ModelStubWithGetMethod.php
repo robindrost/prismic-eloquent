@@ -11,7 +11,7 @@ class ModelStubWithGetMethod extends Model
         return $this->field('title') . ' extra text';
     }
 
-    public function getTypeName()
+    public static function getTypeName()
     {
         return 'page';
     }

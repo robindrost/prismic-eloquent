@@ -116,9 +116,8 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
      */
     public function itCanResolveARelationship()
     {
-        $page = ModelStub::with('page.title')->findById('W0XqJx8AAMLjIlBe');
-
-        $this->assertEquals($page->parent()->title[0]->text, 'B');
+        $page = ModelStub::with(['parent'])->findById('W0XqJx8AAMLjIlBe');
+        $this->assertEquals($page->parent->title[0]->text, 'B');
     }
 
     /**
@@ -126,9 +125,10 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
      */
     public function itCanResolveARelationshipWithMultipleModelOptions()
     {
-        $page = ModelStub::with('page.title')->findById('W0XqJx8AAMLjIlBe');
+        $page = ModelStub::with(['parentWithMultipleModels'])
+            ->findById('W0XqJx8AAMLjIlBe');
 
-        $this->assertEquals($page->parentWithMultipleModels()->title[0]->text, 'B');
+        $this->assertEquals($page->parent->title[0]->text, 'B');
     }
 
     /**
@@ -136,22 +136,8 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
      */
     public function itCanHandleAHasManyRelationship()
     {
-        $page = ModelStub::with('page.title')->findById('W0XqJx8AAMLjIlBe');
-
-        $this->assertInstanceOf(Collection::class, $page->relatedPages());
-    }
-
-    /**
-     * @test
-     */
-    public function itCanResolveARelationshipInAGroup()
-    {
-        $page = ModelStub::with('page.title')
-            ->where('document.id', 'W0XqJx8AAMLjIlBe')
-            ->first();
-
-        $this->assertInstanceOf(Collection::class, $page->linked());
-        $this->assertEquals($page->linked()->first()->other_page->id, 'W0dLmh8AALY7KGdD');
+        $page = ModelStub::with(['relatedPages'])->findById('W0XqJx8AAMLjIlBe');
+        $this->assertInstanceOf(Collection::class, $page->other_pages);
     }
 
     /**
