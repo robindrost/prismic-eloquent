@@ -16,12 +16,12 @@ class ModelStub extends \RobinDrost\PrismicEloquent\Model
 
     public function relatedPages()
     {
-        return $this->hasMany(ModelStub::class, 'related');
+        return $this->hasMany(ModelStub::class, 'other_pages', 'other_page');
     }
 
     public function linked()
     {
-        return $this->hasOneInGroup(ModelStub::class, 'other_pages', 'other_page');
+        return $this->hasManyThroughGroup(ModelStub::class, 'other_pages', 'other_page');
     }
 
     public function getTypeName()

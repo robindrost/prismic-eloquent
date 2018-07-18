@@ -287,6 +287,21 @@ class QueryBuilder
     }
 
     /**
+     * Add a limit on the amount of results returned by prismic. Note that this
+     * will not work for the paginate method. Please use the perPage property
+     * on your model for this.
+     *
+     * @param integer $size
+     *
+     * @return QueryBuilder
+     */
+    public function limit($size)
+    {
+        $this->addOption('pageSize', $size);
+        return $this;
+    }
+
+    /**
      * Order the results by the first publication date.
      *
      * @return $this

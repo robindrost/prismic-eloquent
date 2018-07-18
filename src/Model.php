@@ -204,59 +204,70 @@ abstract class Model
     }
 
     /**
-     * Define a relation on your related fields. Note that this field must
-     * hold data that can be used by the given model.
+     * The has many method is ment to be used on a group that holds a single
+     * field to a relation. Prismic describes this way to create a repeatable
+     * relation.
      *
-     * $this->hasMany(Article::class, 'my_relational_field_name')
+     * This method will overwrite the array of the group with a collection
+     * that holds all the relational data.
      *
-     * You can define fields like this in Prismic with the array operator:
-     * my_relational_field_name[0]
-     * my_relational_field_name[1]
-     * my_relational_field_name[2]
+     * $this->hasMany(Article::class, 'my_group_name', 'my_relational_field')
      *
      * @param string $modelName
+     * @param string $groupField
      * @param string $fieldName
      *
      * @return Collection
      * @throws \InvalidArguementException
      */
-    protected function hasMany($modelName, $fieldName)
+    protected function hasMany($modelName, $groupField, $fieldName)
     {
-        if (! is_array($this->field($fieldName))) {
-            throw new \InvalidArgumentException("The field {$fieldName} is not an array.");
+        if ($this->field($groupField) instanceof Collection) {
+            return $this->field($groupField);
         }
 
-        return collect($this->field($fieldName))->map(function ($relation) use ($modelName) {
-            return $this->relationToModel($relation, $modelName);
-        })->filter(function ($model) {
-            return $model instanceof Model;
-        });
+        $this->data->{$groupField} = collect($this->field($groupField))
+            ->map(function ($group) use ($fieldName, $modelName) {
+                return $this->relationToModel($group->{$fieldName}, $modelName);
+            })->filter(function ($model) {
+                return $model instanceof Model;
+            });
+
+        return $this->field($groupField);
     }
 
     /**
-     * Define relation for relational fields that live inside a group field.
+     * This method will look for the given relation in a group and replace
+     * it with a model. The group will be transformed to a collection but
+     * keeps it original other fields as well.
      *
-     * $this->hasOneInGroup(Article::class, 'group_field_name', 'relation_field_name')
+     * Use this method when the group has other data then relational data
+     * as well.
+     *
+     * $this->hasManyThroughGroup(Article::class, 'group_field_name', 'relation_field_name')
      *
      * @param string $modelName
-     * @param string $groupFieldName
+     * @param string $groupField
      * @param string $fieldName
      *
      * @return Collection
      * @throws \InvalidArguementException
      */
-    protected function hasOneInGroup($modelName, $groupFieldName, $fieldName)
+    protected function hasManyThroughGroup($modelName, $groupField, $fieldName)
     {
-        if (! is_array($this->field($groupFieldName))) {
-            throw new \InvalidArgumentException("The field {$fieldName} is not an array.");
+        if ($this->field($groupField) instanceof Collection) {
+            return $this->field($groupField);
         }
 
-        return collect($this->field($groupFieldName))->map(function ($group) use ($modelName, $fieldName) {
-            $group->{$fieldName} = $this->relationToModel($group->{$fieldName}, $modelName);
-            return $group;
-        })->filter(function ($group) use ($fieldName) {
-            return $group->{$fieldName} instanceof Model;
-        });
+        $this->data->{$groupField} = collect($this->field($groupField))
+            ->map(function ($group) use ($modelName, $fieldName) {
+                $group->{$fieldName} = $this->relationToModel($group->{$fieldName}, $modelName);
+                return $group;
+            })->filter(function ($group) use ($fieldName) {
+                return $group->{$fieldName} instanceof Model;
+            });
+
+        return $this->field($groupField);
     }
 
     /**
