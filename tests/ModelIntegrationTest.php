@@ -143,6 +143,16 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
     /**
      * @test
      */
+    public function itCanPeformASearch()
+    {
+        $results = ModelStub::search('A')->get();
+
+        $this->assertInstanceOf(Collection::class, $results);
+    }
+
+    /**
+     * @test
+     */
     public function itCanMakeAPaginatedRequest()
     {
         $page = ModelStub::paginate();

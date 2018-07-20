@@ -371,6 +371,20 @@ class QueryBuilder
     }
 
     /**
+     * Peform a full query search on the document.
+     * @see https://prismic.io/docs/php/query-the-api/fulltext-search
+     *
+     * @param string $value
+     *
+     * @return QueryBuilder
+     */
+    public function search($value)
+    {
+        $this->addPredicate(Predicates::fulltext('document', $value));
+        return $this;
+    }
+
+    /**
      * Add a new predicates to the predicates property.
      *
      * @param Predicate $predicate
