@@ -179,6 +179,30 @@ abstract class Model
     }
 
     /**
+     * Return the current active slug.
+     *
+     * @return string|null
+     */
+    public function slug()
+    {
+        if ($this->hasAttribute('slugs')) {
+            return $this->attribute('slugs')[0];
+        }
+    }
+
+    /**
+     * Return the history of slugs.
+     *
+     * @return array|null
+     */
+    public function slugs()
+    {
+        if ($this->hasAttribute('slugs')) {
+            return $this->attribute('slugs');
+        }
+    }
+
+    /**
      * Return a new query builder instance.
      *
      * @return QueryBuilder
