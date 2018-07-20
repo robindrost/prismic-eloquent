@@ -306,15 +306,20 @@ class QueryBuilder
      * Order the query by one of your fields.
      *
      * @param string $field
-     *  e.g: 'publication_date'
-     *      or 'publication_date asc'
-     *      or 'publication_date desc'
+     *  e.g: 'fieldname'
+     *      or 'fieldname asc'
+     *      or 'fieldname desc'
+     *      or 'document.first_publication_date'
      *
      * @return QueryBuilder
      */
     public function orderBy($field)
     {
-        $this->addOption('orderings', "[my.{$this->model::getTypeName()}.{$field}]");
+        if (! $this->isDocumentBaseField($field)) {
+            $field = "my.{$this->model::getTypeName()}.{$field}";
+        }
+
+        $this->addOption('orderings', "[{$field}]");
         return $this;
     }
 
