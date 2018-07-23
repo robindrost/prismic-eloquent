@@ -64,10 +64,13 @@ class QueryBuilder
     public function single()
     {
         $document = $this->api()->getSingle($this->model::getTypeName(), $this->options);
-        $this->model->attachDocument($document);
-        $this->resolveRelationships($this->model);
 
-        return $this->model;
+        if (! empty($document)) {
+            $this->model->attachDocument($document);
+            $this->resolveRelationships($this->model);
+
+            return $this->model;
+        }
     }
 
     /**
@@ -79,10 +82,13 @@ class QueryBuilder
     public function findById($id)
     {
         $document = $this->api()->getByID($id, $this->options);
-        $this->model->attachDocument($document);
-        $this->resolveRelationships($this->model);
 
-        return $this->model;
+        if (! empty($document)) {
+            $this->model->attachDocument($document);
+            $this->resolveRelationships($this->model);
+
+            return $this->model;
+        }
     }
 
     /**
@@ -94,10 +100,13 @@ class QueryBuilder
     public function find($uid)
     {
         $document = $this->api()->getByUid($this->model::getTypeName(), $uid, $this->options);
-        $this->model->attachDocument($document);
-        $this->resolveRelationships($this->model);
 
-        return $this->model;
+        if (! empty($document)) {
+            $this->model->attachDocument($document);
+            $this->resolveRelationships($this->model);
+
+            return $this->model;
+        }
     }
 
     /**

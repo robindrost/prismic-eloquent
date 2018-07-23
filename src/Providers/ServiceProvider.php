@@ -16,7 +16,7 @@ class ServiceProvider extends LaravelServiceProvider
     public function register()
     {
         $this->app->singleton(\Prismic\Api::class, function () {
-            return \Prismic\Api::get(config('prismiceloquent.url'), config('prismiceloquent.token'));
+            return \Prismic\Api::get(config('prismiceloquent.url'), config('prismiceloquent.access_token'));
         });
     }
 }
