@@ -116,7 +116,7 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
      */
     public function itCanResolveARelationship()
     {
-        $page = ModelStub::with(['parent'])->findById('W0XqJx8AAMLjIlBe');
+        $page = ModelStub::findById('W0XqJx8AAMLjIlBe');
         $this->assertEquals($page->parent->title[0]->text, 'B');
     }
 
@@ -125,10 +125,9 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
      */
     public function itCanResolveARelationshipWithMultipleModelOptions()
     {
-        $page = ModelStub::with(['parentWithMultipleModels'])
-            ->findById('W0XqJx8AAMLjIlBe');
+        $page = ModelStub::findById('W0XqJx8AAMLjIlBe');
 
-        $this->assertEquals($page->parent->title[0]->text, 'B');
+        $this->assertEquals($page->parentWithMultipleModels()->title[0]->text, 'B');
     }
 
     /**
@@ -136,8 +135,11 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
      */
     public function itCanHandleAHasManyRelationship()
     {
-        $page = ModelStub::with(['relatedPages'])->findById('W0XqJx8AAMLjIlBe');
-        $this->assertInstanceOf(Collection::class, $page->other_pages);
+        $page = ModelStub::findById('W0XqJx8AAMLjIlBe');
+
+        foreach ($page->other_pages as $page) {
+            $this->assertInstanceOf(ModelStub::class, $page->other_page);
+        }
     }
 
     /**
@@ -161,6 +163,15 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
         $page = ModelStub::paginate(1);
         $this->assertEquals(2, $page->total());
         $this->assertEquals(2, $page->lastPage());
+    }
+
+    /**
+     * @test
+     */
+    public function itCanPreLoadRelations()
+    {
+        $page = ModelStub::with('parent')->findById('W0XqJx8AAMLjIlBe');
+        $this->assertEquals($page->parent->title[0]->text, 'B');
     }
 
     protected function getPackageProviders($app)

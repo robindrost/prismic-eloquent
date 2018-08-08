@@ -44,15 +44,18 @@ class QueryBuilder
     /**
      * @var array
      */
-    protected $relationships = [];
+    protected $relationshipMethods = [];
 
-    public function __construct(Model $model)
+    public function __construct(Model $model, $useDocumentType = true)
     {
         $this->model = $model;
         $this->api = resolve(Api::class);
 
         $this->addOption('pageSize', 100);
-        $this->addPredicate(Predicates::at('document.type', $this->model::getTypeName()));
+
+        if ($useDocumentType) {
+            $this->addPredicate(Predicates::at('document.type', $this->model::getTypeName()));
+        }
     }
 
     /**
@@ -65,9 +68,9 @@ class QueryBuilder
     {
         $document = $this->api()->getSingle($this->model::getTypeName(), $this->options);
 
-        if (! empty($document)) {
+        if (!empty($document)) {
             $this->model->attachDocument($document);
-            $this->resolveRelationships($this->model);
+            $this->preLoadRelationships($this->model);
 
             return $this->model;
         }
@@ -83,9 +86,9 @@ class QueryBuilder
     {
         $document = $this->api()->getByID($id, $this->options);
 
-        if (! empty($document)) {
+        if (!empty($document)) {
             $this->model->attachDocument($document);
-            $this->resolveRelationships($this->model);
+            $this->preLoadRelationships($this->model);
 
             return $this->model;
         }
@@ -101,9 +104,9 @@ class QueryBuilder
     {
         $document = $this->api()->getByUid($this->model::getTypeName(), $uid, $this->options);
 
-        if (! empty($document)) {
+        if (!empty($document)) {
             $this->model->attachDocument($document);
-            $this->resolveRelationships($this->model);
+            $this->preLoadRelationships($this->model);
 
             return $this->model;
         }
@@ -143,7 +146,7 @@ class QueryBuilder
 
         $models = array_map(function ($result) {
             $model = $this->model::newInstance($result);
-            $this->resolveRelationships($model);
+            $this->preLoadRelationships($model);
 
             return $model;
         }, $results);
@@ -163,8 +166,8 @@ class QueryBuilder
      */
     public function paginate($perPage = 10, array $fields = [], $pageName = 'page', $page = null)
     {
-        $page = $page ?: Paginator::resolveCurrentPage($pageName);
-        $perPage = $perPage ?: $this->model->getPerPage();
+        $page = $page ? : Paginator::resolveCurrentPage($pageName);
+        $perPage = $perPage ? : $this->model->getPerPage();
 
         $this->specifyFields($fields);
 
@@ -175,7 +178,7 @@ class QueryBuilder
 
         $models = array_map(function ($result) {
             $model = $this->model->newInstance($result);
-            $this->resolveRelationships($model);
+            $this->preLoadRelationships($model);
 
             return $model;
         }, $results);
@@ -212,7 +215,7 @@ class QueryBuilder
      */
     public function where($field, $value)
     {
-        if (! $this->isDocumentBaseField($field)) {
+        if (!$this->isDocumentBaseField($field)) {
             $field = "my.{$this->model::getTypeName()}.{$field}";
         }
 
@@ -230,7 +233,7 @@ class QueryBuilder
      */
     public function whereIn($field, array $values)
     {
-        if (! $this->isDocumentBaseField($field)) {
+        if (!$this->isDocumentBaseField($field)) {
             $field = "my.{$this->model::getTypeName()}.{$field}";
         }
 
@@ -263,51 +266,14 @@ class QueryBuilder
      */
     public function wherePublicationDate($date, $method)
     {
-        if (! empty($method)) {
-            if (! in_array($method, $this->dateOptions)) {
+        if (!empty($method)) {
+            if (!in_array($method, $this->dateOptions)) {
                 throw new \InvalidArgumentException("The method {$method} is not a valid date option.");
             }
 
             $this->addPredicate(Predicates::{$method}('document.first_publication_date', $date));
         }
 
-        return $this;
-    }
-
-    /**
-     * Fetch linked items with the response.
-     *
-     * @see https://prismic.io/docs/php/query-the-api/fetch-linked-document-fields
-     *
-     * @param array $methods
-     *
-     * @return QueryBuilder
-     */
-    public function with(array $methods)
-    {
-        $toFetch = [];
-
-        foreach ($methods as $method) {
-            $relation = $this->model->{$method}();
-
-            if (is_array($relation->getModel())) {
-                foreach ($relation->getModel() as $type => $model) {
-                    foreach ($relation->getFields()[$type] as $field) {
-                        $toFetch[] = "{$type}.{$field}";
-                    }
-                }
-            } else {
-                $contentType = $relation->getModel()::getTypeName();
-
-                foreach ($relation->getFields() as $field) {
-                    $toFetch[] = "{$contentType}.{$field}";
-                }
-            }
-
-            $this->relationships[] = $relation;
-        }
-
-        $this->addOption('fetchLinks', implode(',', $toFetch));
         return $this;
     }
 
@@ -324,7 +290,7 @@ class QueryBuilder
      */
     public function orderBy($field)
     {
-        if (! $this->isDocumentBaseField($field)) {
+        if (!$this->isDocumentBaseField($field)) {
             $field = "my.{$this->model::getTypeName()}.{$field}";
         }
 
@@ -414,15 +380,21 @@ class QueryBuilder
         $this->options[$name] = $value;
     }
 
-    /**
-     * Resolve relationships on the given model.
-     *
-     * @param Model $model
-     */
-    protected function resolveRelationships(Model $model)
+    public function with(...$methods)
     {
-        foreach ($this->relationships as $relation) {
-            $relation->resolve($model);
+        $this->relationshipMethods = $methods;
+
+        return $this;
+    }
+
+    public function preLoadRelationships()
+    {
+        foreach ($this->relationshipMethods as $method) {
+            if (method_exists($this->model, $method)) {
+                $this->model->{$method}();
+            } else {
+                $this->model->{$method};
+            }
         }
     }
 
@@ -447,7 +419,7 @@ class QueryBuilder
      */
     protected function specifyFields(array $fields)
     {
-        if (! empty($fields)) {
+        if (!empty($fields)) {
             $fields = array_map(function ($field) {
                 return "my.{$this->model::getTypeName()}.{$field}";
             }, $fields);

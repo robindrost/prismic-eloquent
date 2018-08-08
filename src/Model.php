@@ -7,6 +7,8 @@ use Illuminate\Support\Collection;
 abstract class Model
 {
 
+    use HasRelationships;
+
     /**
      * @var \stdClass
      */
@@ -29,7 +31,7 @@ abstract class Model
      */
     public function __construct($document = null)
     {
-        if (! empty($document)) {
+        if (!empty($document)) {
             $this->attachDocument($document);
         }
     }
@@ -43,19 +45,19 @@ abstract class Model
      */
     public function __get($key)
     {
-        if (! empty($this->document)) {
-            $method = 'get' . ucfirst($key);
+        if (!empty($this->document)) {
+            $method = 'get' . ucfirst(camel_case($key)) . 'Attribute';
 
             if (method_exists($this, $method)) {
                 return $this->{$method}();
             }
 
-            if ($this->hasField($key)) {
-                return $this->field($key);
-            }
-
             if ($this->hasAttribute($key)) {
                 return $this->attribute($key);
+            }
+
+            if ($this->hasField($key)) {
+                return $this->field($key);
             }
         }
 
@@ -119,7 +121,7 @@ abstract class Model
     }
 
     /**
-     * Return a value from the Prismic data object.
+     * Short hand method for getField.
      *
      * @param string $key
      * @return mixed|null
@@ -130,10 +132,8 @@ abstract class Model
             $key = snake_case($key);
         }
 
-        if (! empty($data = $this->attribute('data'))) {
-            if (property_exists($data, $key)) {
-                return $data->{$key};
-            }
+        if (property_exists($this->document->data, $key)) {
+            return $this->document->data->{$key};
         }
     }
 
@@ -150,7 +150,7 @@ abstract class Model
             $fieldName = snake_case($fieldName);
         }
 
-        return ! empty($this->field($fieldName));
+        return !empty($this->field($fieldName));
     }
 
     /**
@@ -175,7 +175,7 @@ abstract class Model
      */
     public function hasAttribute($attributeName)
     {
-        return ! empty($this->attribute($attributeName));
+        return !empty($this->attribute($attributeName));
     }
 
     /**
@@ -183,9 +183,19 @@ abstract class Model
      *
      * @return QueryBuilder
      */
-    protected function newQuery()
+    public function newQuery()
     {
         return new QueryBuilder($this);
+    }
+
+    /**
+     * Return a new query builder instance without a type specified.
+     *
+     * @return QueryBuilder
+     */
+    public function newEmptyQuery()
+    {
+        return new QueryBuilder($this, false);
     }
 
     /**
@@ -194,50 +204,6 @@ abstract class Model
     protected function getPerPage()
     {
         return $this->perPage;
-    }
-
-    /**
-     * Define a relation on your related fields. Note that this field must
-     * hold data that can be used by the given model.
-     *
-     * $this->hasOne(Article::class, 'related_article', ['title', 'body'])
-     *
-     * or multiple model options
-     *
-     * $this->hasOne(['article' => Article::class, 'person' => Person::class], 'related_article', ['title'])
-     *
-     * @param string|array $modelName
-     * @param string $fieldName
-     * @param array $fieldsToFetch
-     *
-     * @return Relationship
-     */
-    protected function hasOne($modelName, $fieldName, array $fieldsToFetch)
-    {
-        return new Relationship($modelName, $fieldName, $fieldsToFetch);
-    }
-
-    /**
-     * The has many method is ment to be used on a group that holds a single
-     * field to a relation. Prismic describes this way to create a repeatable
-     * relation.
-     *
-     * This method will overwrite the array of the group with a collection
-     * that holds all the relational data.
-     *
-     * $this->hasMany(Article::class, 'group_field', 'field', ['title', 'body'])
-     *
-     * @param string $modelName
-     * @param string $groupField
-     * @param string $fieldName
-     * @param array $fieldsToFetch
-     *
-     * @return Collection
-     * @throws \InvalidArguementException
-     */
-    protected function hasMany($modelName, $groupField, $fieldName, array $fieldsToFetch)
-    {
-        return new Relationship($modelName, $fieldName, $fieldsToFetch, $groupField);
     }
 
     /**

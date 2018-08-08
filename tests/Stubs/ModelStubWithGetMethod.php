@@ -6,7 +6,7 @@ use RobinDrost\PrismicEloquent\Model;
 
 class ModelStubWithGetMethod extends Model
 {
-    public function getTitle()
+    public function getTitleAttribute()
     {
         return $this->field('title') . ' extra text';
     }
