@@ -69,10 +69,10 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function single(string $type): ModelContract
+    public function single(): ModelContract
     {
         return $this->model->attachDocument(
-            $this->api->getSingle($type, $this->options)
+            $this->api->getSingle($this->model::getTypeName(), $this->options)
         )->resolveDocuments();
     }
 

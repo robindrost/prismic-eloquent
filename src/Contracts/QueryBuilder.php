@@ -12,10 +12,9 @@ interface QueryBuilder
     /**
      * Return a single content type page based on the name of the content type.
      *
-     * @param string $type
      * @return Model
      */
-    public function single(string $type) : Model;
+    public function single() : Model;
 
     /**
      * Find a content item based on its UID field.

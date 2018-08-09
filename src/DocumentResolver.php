@@ -95,6 +95,34 @@ class DocumentResolver implements DocumentResolverContract
     }
 
     /**
+     * @inheritdoc
+     */
+    public function resolveEagerLoaded(ModelContract $model, string $field)
+    {
+        if ($this->isValid($model->data->{$field})) {
+            $model->data->{$field} = $this->transformTypeToModel(
+                $model->{$field}->type::newInstance($model->data->{$field})
+            );
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function resolveManyEagerLoaded(array $group)
+    {
+        foreach ($group as $key => $document) {
+            foreach ($document as $field => $data) {
+                if ($this->isValid($data)) {
+                    $group[$key]->{$field} = $this->transformTypeToModel(
+                        $data->type::newInstance($data)
+                    );
+                }
+            }
+        }
+    }
+
+    /**
      * Parse the given document type to a Prismic Eloquent model.
      *
      * @param string $documentType

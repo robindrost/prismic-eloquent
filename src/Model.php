@@ -62,10 +62,6 @@ abstract class Model implements ModelContract
      */
     public function field(string $name)
     {
-        if ($this->fieldsToSnakeCase) {
-            $name = snake_case($name);
-        }
-
         return $this->document->data->{$name};
     }
 
@@ -199,6 +195,10 @@ abstract class Model implements ModelContract
 
             if (method_exists($this, $fieldMethod)) {
                 return $this->{$fieldMethod}($this->field($name));
+            }
+
+            if ($this->fieldsToSnakeCase) {
+                $name = snake_case($name);
             }
 
             return $this->field($name);
