@@ -135,7 +135,7 @@ abstract class Model implements ModelContract
     /**
      * @inheritdoc
      */
-    public function attachDocument($document)
+    public function attachDocument($document) : ModelContract
     {
         $this->document = $document;
         return $this;
@@ -205,12 +205,5 @@ abstract class Model implements ModelContract
         }
 
         return null;
-    }
-
-    public function __set($name, $value)
-    {
-        if ($this->hasField($name)) {
-
-        }
     }
 }
