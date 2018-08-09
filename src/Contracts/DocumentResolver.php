@@ -9,9 +9,8 @@ interface DocumentResolver
      *
      * @param object $parent
      * @param string $field
-     * @return Model
      */
-    public function resolve($parent, string $field) :? Model;
+    public function resolve($parent, string $field);
 
     /**
      * Resolve many documents.

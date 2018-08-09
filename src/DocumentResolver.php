@@ -37,9 +37,8 @@ class DocumentResolver implements DocumentResolverContract
      *
      * @param object $parent
      * @param string $field
-     * @return ModelContract|null
      */
-    public function resolve($parent, string $field) :? ModelContract
+    public function resolve($parent, string $field)
     {
         if ($this->isValid($parent->{$field})) {
             $parent->{$field} = $this->transformTypeToModel($parent->{$field}->type)::findById($parent->{$field}->id);
