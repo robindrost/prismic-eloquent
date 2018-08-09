@@ -33,7 +33,7 @@ abstract class Model implements ModelContract
     public function __construct($document = null)
     {
         if (! empty($document)) {
-            $this->document = $document;
+            $this->attachDocument($document);
         }
     }
 
@@ -82,7 +82,7 @@ abstract class Model implements ModelContract
      */
     public function newQuery(): QueryBuilderContract
     {
-        return (new QueryBuilder(static::class))->whereType(static::getTypeName());
+        return (new QueryBuilder($this))->whereType(static::getTypeName());
     }
 
     /**
@@ -101,7 +101,7 @@ abstract class Model implements ModelContract
     public function resolveDocuments() : ModelContract
     {
         foreach ($this->resolvers as $resolver) {
-            call_user_func([$this, $resolver . 'Resolver']);
+            $this->{$resolver}();
         }
 
         return $this;
@@ -125,9 +125,20 @@ abstract class Model implements ModelContract
     public static function with(...$resolvers) : ModelContract
     {
         $model = new static;
-        $model->resolvers = $resolvers;
+        $model->resolvers = array_map(function ($resolver) {
+            return $resolver . 'Resolver';
+        }, $resolvers);
 
         return $model;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function attachDocument($document)
+    {
+        $this->document = $document;
+        return $this;
     }
 
     /**
@@ -194,5 +205,12 @@ abstract class Model implements ModelContract
         }
 
         return null;
+    }
+
+    public function __set($name, $value)
+    {
+        if ($this->hasField($name)) {
+
+        }
     }
 }

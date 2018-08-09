@@ -7,18 +7,18 @@ interface DocumentResolver
     /**
      * Resolve a single document.
      *
-     * @param mixed $document
+     * @param object $parent
+     * @param string $field
      * @return Model
      */
-    public function resolve($document) :? Model;
+    public function resolve($parent, string $field) :? Model;
 
     /**
      * Resolve many documents.
      *
      * @param array $documents
-     * @return array
      */
-    public function resolveMany(array $documents) : array;
+    public function resolveMany(array $documents);
 
     /**
      * Set the model namespace. This is used to link document types to models.

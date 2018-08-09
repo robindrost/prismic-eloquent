@@ -61,6 +61,14 @@ interface Model
     public function resolveDocuments() : Model;
 
     /**
+     * Attach a document object to the model.
+     *
+     * @param mixed $document
+     * @return Model
+     */
+    public function attachDocument($document) : Model;
+
+    /**
      * Return the content type name of the model.
      *
      * @return string

@@ -20,6 +20,7 @@ class QueryBuilder implements QueryBuilderContract
     protected const DOCUMENT_ATTRIBUTES = [
         'id',
         'uid',
+        'type',
         'href',
         'tags',
         'first_publication_date',
@@ -56,13 +57,13 @@ class QueryBuilder implements QueryBuilderContract
     protected $toResolve = [];
 
     /**
-     * @param string $model
+     * @param ModelContract $model
      * @param Api|null $api
      */
-    public function __construct(string $model, Api $api = null)
+    public function __construct(ModelContract $model, Api $api = null)
     {
         $this->model = $model;
-        $this->api = ! empty($api) ?? resolve(Api::class);
+        $this->api = ! empty($api) ? $api : resolve(Api::class);
     }
 
     /**
@@ -70,7 +71,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function single(string $type): ModelContract
     {
-        return $this->model::newInstance(
+        return $this->model->attachDocument(
             $this->api->getSingle($type, $this->options)
         )->resolveDocuments();
     }
@@ -80,7 +81,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function find(string $uid): ModelContract
     {
-        return $this->model::newInstance(
+        return $this->model->attachDocument(
             $this->api->getByUID($this->model::getTypeName(), $uid, $this->options)
         )->resolveDocuments();
     }
@@ -90,7 +91,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function findById(string $id): ModelContract
     {
-        return $this->model::newInstance(
+        return $this->model->attachDocument(
             $this->api->getByID($id, $this->options)
         )->resolveDocuments();
     }
@@ -100,7 +101,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function findByIds(array $ids): Collection
     {
-        return collect($this->model::newInstance(
+        return collect($this->model->attachDocument(
             $this->api->getByIDs($ids, $this->options)
         ))->map(function (Model $model) {
             $model->resolveDocuments();
@@ -131,7 +132,7 @@ class QueryBuilder implements QueryBuilderContract
         }
 
         $models = array_map(function ($result) {
-            return $this->model::newInstance($result)->resolveDocuments();
+            return (clone $this->model)->attachDocument($result)->resolveDocuments();
         }, $results);
 
         return $this->model::newCollection($models);
@@ -149,7 +150,7 @@ class QueryBuilder implements QueryBuilderContract
         $results = $query->results;
 
         $items = $this->model::newCollection(array_map(function ($result) {
-            return $this->model::newInstance($result)->resolveDocuments();
+            return (clone $this->model)->attachDocument($result)->resolveDocuments();
         }, $results));
 
         return Container::getInstance()->makeWith(LengthAwarePaginator::class, [
@@ -278,6 +279,8 @@ class QueryBuilder implements QueryBuilderContract
     {
         if (! in_array($field, self::DOCUMENT_ATTRIBUTES)) {
             $field = "my.{$this->model::getTypeName()}.{$field}";
+        } else {
+            $field = "document.{$field}";
         }
 
         if (! empty($method)) {

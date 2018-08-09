@@ -19,7 +19,9 @@ class DocumentResolver implements DocumentResolverContract
      */
     public function __construct($modelNamespace = null)
     {
-        $this->setModelNamespace(! empty($modelNamespace) ?? config('prismiceloquent.model_namespace'));
+        $this->setModelNamespace(
+            ! empty($modelNamespace) ? $modelNamespace : config('prismiceloquent.model_namespace')
+        );
     }
 
     /**
@@ -33,13 +35,14 @@ class DocumentResolver implements DocumentResolverContract
     /**
      * Resolve a content relation by its type and id.
      *
-     * @param object $document
+     * @param object $parent
+     * @param string $field
      * @return ModelContract|null
      */
-    public function resolve($document) :? ModelContract
+    public function resolve($parent, string $field) :? ModelContract
     {
-        if ($this->isValid($document)) {
-            return $this->transformTypeToModel($document->type)::findById($document->id);
+        if ($this->isValid($parent->{$field})) {
+            $parent->{$field} = $this->transformTypeToModel($parent->{$field}->type)::findById($parent->{$field}->id);
         }
     }
 
@@ -51,9 +54,8 @@ class DocumentResolver implements DocumentResolverContract
      * $documentResolver->resolveArray($articles->my_group_field);
      *
      * @param array $group
-     * @return array
      */
-    public function resolveMany(array $group) : array
+    public function resolveMany(array $group)
     {
         $references = collect([]);
 
@@ -84,8 +86,6 @@ class DocumentResolver implements DocumentResolverContract
                 $models->firstWhere('document.id', $reference['id'])
             );
         }
-
-        return $group;
     }
 
     /**
