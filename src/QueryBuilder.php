@@ -7,21 +7,38 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Prismic\Api;
-use Prismic\Predicate;
 use Prismic\Predicates;
+use RobinDrost\PrismicEloquent\Contracts\Model as ModelContract;
+use RobinDrost\PrismicEloquent\Contracts\QueryBuilder as QueryBuilderContract;
 
-class QueryBuilder
+class QueryBuilder implements QueryBuilderContract
 {
 
     /**
-     * @var \Prismic\Api
+     * @const array
      */
-    protected $api;
+    protected const DOCUMENT_ATTRIBUTES = [
+        'id',
+        'uid',
+        'href',
+        'tags',
+        'first_publication_date',
+        'last_publication_date',
+        'linked_documents',
+        'lang',
+        'alternate_languages',
+        'data',
+    ];
 
     /**
-     * @var Model
+     * @var ModelContract
      */
     protected $model;
+
+    /**
+     * @var Api
+     */
+    protected $api;
 
     /**
      * @var array
@@ -36,155 +53,107 @@ class QueryBuilder
     /**
      * @var array
      */
-    protected $dateOptions = [
-        'month',
-        'year',
-    ];
+    protected $toResolve = [];
 
     /**
-     * @var array
+     * @param string $model
+     * @param Api|null $api
      */
-    protected $relationshipMethods = [];
-
-    public function __construct(Model $model, $useDocumentType = true)
+    public function __construct(string $model, Api $api = null)
     {
         $this->model = $model;
-        $this->api = resolve(Api::class);
-
-        $this->addOption('pageSize', 100);
-
-        if ($useDocumentType) {
-            $this->addPredicate(Predicates::at('document.type', $this->model::getTypeName()));
-        }
+        $this->api = ! empty($api) ?? resolve(Api::class);
     }
 
     /**
-     * Retrieve a document that belongs to a single type. This method
-     * does not work for repreatable types.
-     *
-     * @return Model
+     * @inheritdoc
      */
-    public function single()
+    public function single(string $type): ModelContract
     {
-        $document = $this->api()->getSingle($this->model::getTypeName(), $this->options);
-
-        if (!empty($document)) {
-            $this->model->attachDocument($document);
-            $this->preLoadRelationships($this->model);
-
-            return $this->model;
-        }
+        return $this->model::newInstance(
+            $this->api->getSingle($type, $this->options)
+        )->resolveDocuments();
     }
 
     /**
-     * Get a single item from Prismic by id.
-     *
-     * @param  string $id
-     * @return Model
+     * @inheritdoc
      */
-    public function findById($id)
+    public function find(string $uid): ModelContract
     {
-        $document = $this->api()->getByID($id, $this->options);
-
-        if (!empty($document)) {
-            $this->model->attachDocument($document);
-            $this->preLoadRelationships($this->model);
-
-            return $this->model;
-        }
+        return $this->model::newInstance(
+            $this->api->getByUID($this->model::getTypeName(), $uid, $this->options)
+        )->resolveDocuments();
     }
 
     /**
-     * Get a single item from Prismic by uid.
-     *
-     * @param  string $uid
-     * @return Model
+     * @inheritdoc
      */
-    public function find($uid)
+    public function findById(string $id): ModelContract
     {
-        $document = $this->api()->getByUid($this->model::getTypeName(), $uid, $this->options);
-
-        if (!empty($document)) {
-            $this->model->attachDocument($document);
-            $this->preLoadRelationships($this->model);
-
-            return $this->model;
-        }
+        return $this->model::newInstance(
+            $this->api->getByID($id, $this->options)
+        )->resolveDocuments();
     }
 
     /**
-     * Return all the documents of the current model type.
-     *
-     * @param array $fields
-     * @return Collection
+     * @inheritdoc
      */
-    public function all(array $fields = [])
+    public function findByIds(array $ids): Collection
     {
-        return $this->get($fields);
+        return collect($this->model::newInstance(
+            $this->api->getByIDs($ids, $this->options)
+        ))->map(function (Model $model) {
+            $model->resolveDocuments();
+        });
     }
 
     /**
-     * Get all the results based on the current predicates and options.
-     *
-     * @param array $fields
-     * @return Model|Collection
+     * @inheritdoc
      */
-    public function get(array $fields = [])
+    public function first() : ModelContract
     {
-        $this->specifyFields($fields);
+        return $this->limit(1)->all()->first()->resolveDocuments();
+    }
 
+    /**
+     * @inheritdoc
+     */
+    public function all(): Collection
+    {
         $query = $this->pagerQuery();
         $results = $query->results;
 
         if ($query->total_results_size > $query->results_size) {
             $pagesAmount = round($query->total_results_size / $query->results_size);
-
             foreach (range(2, $pagesAmount) as $number) {
                 $results = array_merge($results, $this->pagerQuery(intval($number)));
             }
         }
 
         $models = array_map(function ($result) {
-            $model = $this->model::newInstance($result);
-            $this->preLoadRelationships($model);
-
-            return $model;
+            return $this->model::newInstance($result)->resolveDocuments();
         }, $results);
 
-        return $this->model->newCollection($models);
+        return $this->model::newCollection($models);
     }
 
     /**
-     * Perform a paginate request. This method works the same as the
-     * default eloquent model one.
-     *
-     * @param int $perPage
-     * @param array $fields
-     * @param string $pageName
-     * @param null $page
-     * @return LengthAwarePaginator
+     * @inheritdoc
      */
-    public function paginate($perPage = 10, array $fields = [], $pageName = 'page', $page = null)
+    public function paginate(int $perPage = 10, array $fields = [], string $pageName = 'page', $page = null): Container
     {
-        $page = $page ? : Paginator::resolveCurrentPage($pageName);
-        $perPage = $perPage ? : $this->model->getPerPage();
-
-        $this->specifyFields($fields);
+        $page = $page ?: Paginator::resolveCurrentPage($pageName);
 
         $this->addOption('pageSize', $perPage);
-
         $query = $this->pagerQuery($page);
         $results = $query->results;
 
-        $models = array_map(function ($result) {
-            $model = $this->model->newInstance($result);
-            $this->preLoadRelationships($model);
-
-            return $model;
-        }, $results);
+        $items = $this->model::newCollection(array_map(function ($result) {
+            return $this->model::newInstance($result)->resolveDocuments();
+        }, $results));
 
         return Container::getInstance()->makeWith(LengthAwarePaginator::class, [
-            'items' => $this->model->newCollection($models),
+            'items' => $items,
             'total' => $query->total_results_size,
             'perPage' => $perPage,
             'currentPage' => $page,
@@ -196,213 +165,155 @@ class QueryBuilder
     }
 
     /**
-     * Return the first item of the query.
-     *
-     * @return Model
+     * @inheritdoc
      */
-    public function first()
+    public function whereType(String $type): QueryBuilderContract
     {
-        return $this->get()->first();
-    }
-
-    /**
-     * Apply a where clause by anthing on the current query.
-     *
-     * @param string $field
-     * @param mixed $value
-     *
-     * @return QueryBuilder
-     */
-    public function where($field, $value)
-    {
-        if (!$this->isDocumentBaseField($field)) {
-            $field = "my.{$this->model::getTypeName()}.{$field}";
-        }
-
-        $this->addPredicate(Predicates::at($field, $value));
+        $this->addPredicate('type', $type);
         return $this;
     }
 
     /**
-     * Apply a whereIn field clause on the current query.
-     *
-     * @param string $field
-     * @param array  $values
-     *
-     * @return QueryBuilder
+     * @inheritdoc
      */
-    public function whereIn($field, array $values)
+    public function whereTag(String $tag): QueryBuilderContract
     {
-        if (!$this->isDocumentBaseField($field)) {
-            $field = "my.{$this->model::getTypeName()}.{$field}";
-        }
-
-        $this->addPredicate(Predicates::any($field, $values));
+        $this->addPredicate('tags', $tag);
         return $this;
     }
 
     /**
-     * Apply a tag filter on the query.
-     *
-     * @param array $tags
-     *
-     * @return QueryBuilder
+     * @inheritdoc
      */
-    public function whereTags(...$tags)
+    public function whereTags(array $tags): QueryBuilderContract
     {
-        $this->where('document.tags', $tags);
+        $this->addPredicate('tags', $tags);
         return $this;
     }
 
     /**
-     * Apply a publication-date filter on the query. Either specify a date as a full
-     * date e.g 2018-07-03 or use it in comibination with the method parameter e.g
-     * $date = 'May' $method = 'month'.
-     *
-     * @param string $date
-     *
-     * @return QueryBuilder
-     * @throws \InvalidArgumentException
+     * @inheritdoc
      */
-    public function wherePublicationDate($date, $method)
+    public function where(string $field, $value): QueryBuilderContract
     {
-        if (!empty($method)) {
-            if (!in_array($method, $this->dateOptions)) {
-                throw new \InvalidArgumentException("The method {$method} is not a valid date option.");
-            }
+        $this->addPredicate($field, $value);
+        return $this;
+    }
 
-            $this->addPredicate(Predicates::{$method}('document.first_publication_date', $date));
-        }
+    /**
+     * @inheritdoc
+     */
+    public function whereIn(string $field, array $values): QueryBuilderContract
+    {
+        $this->addPredicate('field', $values);
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function whereNot(string $field, $value): QueryBuilderContract
+    {
+        $this->addPredicate('tags', $value, 'not');
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function whereLanguage($language): QueryBuilderContract
+    {
+        $this->addPredicate('lang', $language);
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function fetch(...$fields): QueryBuilderContract
+    {
+        $this->addOption('fetchLinks', implode(',', $fields));
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function select(...$fields): QueryBuilderContract
+    {
+        $this->addOption('fetch', implode(',', array_map(function ($field) {
+            return "my.{$this->model::getTypeName()}.{$field}";
+        }, $fields)));
 
         return $this;
     }
 
     /**
-     * Order the query by one of your fields.
-     *
-     * @param string $field
-     *  e.g: 'fieldname'
-     *      or 'fieldname asc'
-     *      or 'fieldname desc'
-     *      or 'document.first_publication_date'
-     *
-     * @return QueryBuilder
+     * @inheritdoc
      */
-    public function orderBy($field)
+    public function orderBy(string $field, $sort = 'desc'): QueryBuilderContract
     {
-        if (!$this->isDocumentBaseField($field)) {
-            $field = "my.{$this->model::getTypeName()}.{$field}";
+        if (in_array($field, self::DOCUMENT_ATTRIBUTES)) {
+            $field = "document.{$field}";
         }
 
         $this->addOption('orderings', "[{$field}]");
+
         return $this;
     }
 
     /**
-     * Add a limit on the amount of results returned by prismic. Note that this
-     * will not work for the paginate method. Please use the perPage property
-     * on your model for this.
-     *
-     * @param integer $size
-     *
-     * @return QueryBuilder
+     * @inheritdoc
      */
-    public function limit($size)
+    public function limit(int $pageSize) : QueryBuilderContract
     {
-        $this->addOption('pageSize', $size);
+        $this->addOption('pageSize', $pageSize);
         return $this;
     }
 
     /**
-     * Order the results by the first publication date.
-     *
-     * @return $this
+     * @inheritdoc
      */
-    public function orderByFirstPublicationDate()
+    public function addPredicate(string $field, $value, $method = null)
     {
-        $this->addOption('orderings', '[document.first_publication_date]');
-        return $this;
-    }
+        if (! in_array($field, self::DOCUMENT_ATTRIBUTES)) {
+            $field = "my.{$this->model::getTypeName()}.{$field}";
+        }
 
-    /**
-     * Order the results by the last publication date.
-     *
-     * @return $this
-     */
-    public function orderByLastPublicationDate()
-    {
-        $this->addOption('orderings', '[document.last_publication_date]');
-        return $this;
-    }
+        if (! empty($method)) {
+            $predicate = Predicates::{$method}($field, $value);
+        } elseif (is_array($value) && count($value) > 1) {
+            $predicate = Predicates::any($field, $value);
+        } else {
+            $predicate = Predicates::at($field, $value);
+        }
 
-    /**
-     * Make the query for specific language.
-     *
-     * @param string $language
-     */
-    public function language($language)
-    {
-        $this->addOption('lang', $language);
-    }
-
-    /**
-     * Peform a full query search on the document.
-     * @see https://prismic.io/docs/php/query-the-api/fulltext-search
-     *
-     * @param string $value
-     *
-     * @return QueryBuilder
-     */
-    public function search($value)
-    {
-        $this->addPredicate(Predicates::fulltext('document', $value));
-        return $this;
-    }
-
-    /**
-     * Add a new predicates to the predicates property.
-     *
-     * @param Predicate $predicate
-     */
-    public function addPredicate(Predicate $predicate)
-    {
         $this->predicates[] = $predicate;
     }
 
     /**
-     * Add a new Prismic query option.
-     *
-     * @param string $name
-     * @param string $value
+     * @inheritdoc
      */
-    public function addOption($name, $value)
+    public function addOption(string $option, $value)
     {
-        $this->options[$name] = $value;
+        $this->options[$option] = $value;
     }
 
-    public function with(...$methods)
+    /**
+     * Get the Prismic Api object.
+     *
+     * @return Api
+     */
+    public function api() : Api
     {
-        $this->relationshipMethods = $methods;
-
-        return $this;
-    }
-
-    public function preLoadRelationships()
-    {
-        foreach ($this->relationshipMethods as $method) {
-            if (method_exists($this->model, $method)) {
-                $this->model->{$method}();
-            } else {
-                $this->model->{$method};
-            }
-        }
+        return $this->api;
     }
 
     /**
      * Run a pager query.
      *
      * @param int $page
-     * @return \stdClass
+     * @return mixed
      */
     protected function pagerQuery($page = 1)
     {
@@ -410,41 +321,5 @@ class QueryBuilder
             $this->predicates,
             array_merge($this->options, ['page' => $page])
         );
-    }
-
-    /**
-     * Only query specific fields.
-     *
-     * @param array $fields
-     */
-    protected function specifyFields(array $fields)
-    {
-        if (!empty($fields)) {
-            $fields = array_map(function ($field) {
-                return "my.{$this->model::getTypeName()}.{$field}";
-            }, $fields);
-
-            $this->addOption('fetch', implode(',', $fields));
-        }
-    }
-
-    /**
-     * Check if the given field name is one of the documents
-     * or a custom field.
-     *
-     * @param string $fieldName
-     * @return bool
-     */
-    protected function isDocumentBaseField($fieldName)
-    {
-        return explode('.', $fieldName)[0] == 'document';
-    }
-
-    /**
-     * @return Api
-     */
-    public function api()
-    {
-        return $this->api;
     }
 }
