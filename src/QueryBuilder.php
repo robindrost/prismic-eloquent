@@ -2,7 +2,7 @@
 
 namespace RobinDrost\PrismicEloquent;
 
-use Illuminate\Container\Container;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -101,11 +101,11 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function findByIds(array $ids): Collection
     {
-        return collect($this->model->attachDocument(
-            $this->api->getByIDs($ids, $this->options)
-        ))->map(function (Model $model) {
-            $model->resolveDocuments();
-        });
+        $models = array_map(function ($document) {
+            return (clone $this->model)->attachDocument($document)->resolveDocuments();
+        }, $this->api()->getByIDs($ids)->results);
+
+        return $this->model::newCollection($models);
     }
 
     /**
@@ -141,8 +141,12 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function paginate(int $perPage = 10, array $fields = [], string $pageName = 'page', $page = null): Container
-    {
+    public function paginate(
+        int $perPage = 10,
+        array $fields = [],
+        string $pageName = 'page',
+        $page = null
+    ): LengthAwarePaginatorContract {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
 
         $this->addOption('pageSize', $perPage);
@@ -179,7 +183,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereTag(String $tag): QueryBuilderContract
     {
-        $this->addPredicate('tags', $tag);
+        $this->addPredicate('tags', [$tag], 'at');
         return $this;
     }
 
@@ -206,7 +210,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereIn(string $field, array $values): QueryBuilderContract
     {
-        $this->addPredicate('field', $values);
+        $this->addPredicate($field, $values);
         return $this;
     }
 
@@ -224,7 +228,16 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereLanguage($language): QueryBuilderContract
     {
-        $this->addPredicate('lang', $language);
+        $this->addOption('lang', $language);
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function search($text) : QueryBuilderContract
+    {
+        $this->addPredicate('document', $text, 'fulltext');
         return $this;
     }
 
@@ -243,7 +256,7 @@ class QueryBuilder implements QueryBuilderContract
     public function select(...$fields): QueryBuilderContract
     {
         $this->addOption('fetch', implode(',', array_map(function ($field) {
-            return "my.{$this->model::getTypeName()}.{$field}";
+            return "{$this->model::getTypeName()}.{$field}";
         }, $fields)));
 
         return $this;
@@ -285,7 +298,7 @@ class QueryBuilder implements QueryBuilderContract
 
         if (! empty($method)) {
             $predicate = Predicates::{$method}($field, $value);
-        } elseif (is_array($value) && count($value) > 1) {
+        } elseif (is_array($value)) {
             $predicate = Predicates::any($field, $value);
         } else {
             $predicate = Predicates::at($field, $value);

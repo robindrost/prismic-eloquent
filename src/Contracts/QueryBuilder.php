@@ -2,7 +2,8 @@
 
 namespace RobinDrost\PrismicEloquent\Contracts;
 
-use Illuminate\Container\Container;
+
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 interface QueryBuilder
@@ -61,14 +62,14 @@ interface QueryBuilder
      * @param array $fields
      * @param string $pageName
      * @param null $page
-     * @return Container
+     * @return LengthAwarePaginator
      */
     public function paginate(
         int $perPage = 10,
         array $fields = [],
         string $pageName = 'page',
         $page = null
-    ) : Container;
+    ) : LengthAwarePaginator;
 
     /**
      * Set the content type name to match the given type.
@@ -128,6 +129,14 @@ interface QueryBuilder
      * @return QueryBuilder
      */
     public function whereLanguage($language) : QueryBuilder;
+
+    /**
+     * Apply a full text where clause.
+     *
+     * @param $text
+     * @return QueryBuilder
+     */
+    public function search($text) : QueryBuilder;
 
     /**
      * Use the Prismic fetch option to eager load fields. The fields are

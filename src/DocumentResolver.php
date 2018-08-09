@@ -41,6 +41,10 @@ class DocumentResolver implements DocumentResolverContract
     public function resolve($parent, string $field)
     {
         if ($this->isValid($parent->{$field})) {
+            if (property_exists($parent, 'data')) {
+                $parent = $parent->data;
+            }
+
             $parent->{$field} = $this->transformTypeToModel($parent->{$field}->type)::findById($parent->{$field}->id);
         }
     }
@@ -68,21 +72,24 @@ class DocumentResolver implements DocumentResolverContract
             }
         };
 
-        foreach ($group as $key => $field) {
-            if ($this->isValid($field)) {
-                $references->push([
-                    'key' => $key,
-                    'id' => $field->id,
-                    'model' => $this->transformTypeToModel($field->type),
-                ]);
+        foreach ($group as $key => $document) {
+            foreach ($document as $field => $data) {
+                if ($this->isValid($data)) {
+                    $references->push([
+                        'key' => $key,
+                        'field' => $field,
+                        'id' => $data->id,
+                        'model' => $this->transformTypeToModel($data->type),
+                    ]);
+                }
             }
         }
 
-        $models = $anonymousModel::findByIds($references->pluck('id')->toArray());
+        $models = collect($anonymousModel::api()->getByIds($references->pluck('id')->toArray())->results);
 
         foreach ($references as $reference) {
-            $group[$reference['key']] = $reference['model']::newInstance(
-                $models->firstWhere('document.id', $reference['id'])
+            $group[$reference['key']]->{$reference['field']} = $reference['model']::newInstance(
+                $models->firstWhere('id', $reference['id'])
             );
         }
     }
