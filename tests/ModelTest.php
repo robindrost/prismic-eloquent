@@ -3,90 +3,73 @@
 namespace RobinDrost\PrismicEloquent\Tests;
 
 use Illuminate\Support\Collection;
-use RobinDrost\PrismicEloquent\Tests\Stubs\ModelStub;
-use RobinDrost\PrismicEloquent\Tests\Stubs\ModelStubWithGetMethod;
-use RobinDrost\PrismicEloquent\Tests\Stubs\ModelStubNoType;
+use PHPUnit\Framework\TestCase;
+use RobinDrost\PrismicEloquent\Tests\Stubs\PageStub;
 
-class ModelTest extends \PHPUnit\Framework\TestCase
+class ModelTest extends TestCase
 {
-    /**
-     * @var \stdClass
-     */
-    protected $document;
+    protected $documentStub;
 
     public function setUp()
     {
-        $this->document = json_decode(json_encode([
-            'id' => 1,
+        parent::setUp();
+
+        $this->documentStub = json_decode(json_encode([
+            'type' => 'test',
             'data' => [
                 'title' => 'Test',
             ],
         ]));
-
-        return parent::setUp();
     }
 
-    /**
-     * @test
-     */
-    public function itUsesTheClassNameAsContentType()
+    public function testItCanReturnTheContentType()
     {
-        $model = new ModelStubNoType;
-        $this->assertEquals($model->getTypeName(), 'model_stub_no_type');
+        $this->assertEquals('page_stub', PageStub::getTypeName());
     }
 
-    /**
-     * @test
-    */
-    public function itCanAttachData()
+    public function testItCanCreateANewInstanceOfItself()
     {
-        $model = new ModelStub;
-        $model->attachDocument($this->document);
-        $this->assertEquals($this->document, $model->document);
+        $this->assertInstanceOf(PageStub::class, PageStub::newInstance($this->documentStub));
     }
 
-    /**
-     * @test
-    */
-    public function itCanAccessDataByProperties()
-    {
-        $model = new ModelStub;
-        $model->attachDocument($this->document);
-        $this->assertEquals($this->document->data->title, $model->title);
-    }
-
-    /**
-     * @test
-    */
-    public function itWillUseAGetMethodWhenSpecified()
-    {
-        $model = new ModelStubWithGetMethod;
-        $model->attachDocument($this->document);
-        $this->assertEquals($this->document->data->title . ' extra text', $model->title);
-    }
-
-    /**
-     * @test
-     */
-    public function itCanRetrieveDocumentAttributes()
-    {
-        $model = new ModelStub;
-        $model->attachDocument($this->document);
-        $this->assertEquals($this->document->id, $model->id);
-    }
-
-    /**
-     * @test
-    */
-    public function itCanCreateACollectionOfModels()
+    public function testItCanCreateACollectionOfModels()
     {
         $models = [
-            new ModelStub,
-            new ModelStub,
-            new ModelStub,
+            PageStub::newInstance($this->documentStub),
+            PageStub::newInstance($this->documentStub),
+            PageStub::newInstance($this->documentStub),
         ];
 
-        $model = new ModelStub;
-        $this->assertInstanceOf(Collection::class, $model->newCollection($models));
+        $collection = PageStub::newCollection($models);
+
+        $this->assertInstanceOf(Collection::class, $collection);
+    }
+
+    public function testItCanCheckIfAnAttributeExists()
+    {
+        $this->assertTrue(PageStub::newInstance($this->documentStub)->hasAttribute('type'));
+        $this->assertFalse(PageStub::newInstance($this->documentStub)->hasAttribute('non_existing'));
+    }
+
+    public function testItCanRetrieveAnAttribute()
+    {
+        $this->assertEquals(
+            $this->documentStub->type,
+            PageStub::newInstance($this->documentStub)->attribute('type')
+        );
+    }
+
+    public function testItCanCheckIfAFieldExists()
+    {
+        $this->assertTrue(PageStub::newInstance($this->documentStub)->hasField('title'));
+        $this->assertFalse(PageStub::newInstance($this->documentStub)->hasField('non_existing'));
+    }
+
+    public function testItCanRetrieveAField()
+    {
+        $this->assertEquals(
+            $this->documentStub->data->title,
+            PageStub::newInstance($this->documentStub)->field('title')
+        );
     }
 }

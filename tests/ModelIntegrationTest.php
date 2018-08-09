@@ -3,173 +3,51 @@
 namespace RobinDrost\PrismicEloquent\Tests;
 
 use Illuminate\Support\Collection;
-use RobinDrost\PrismicEloquent\Model;
-use RobinDrost\PrismicEloquent\Tests\Stubs\ModelStub;
-use RobinDrost\PrismicEloquent\Tests\Stubs\ModelSingleTypeStub;
+use RobinDrost\PrismicEloquent\Tests\Stubs\PageStub;
+use RobinDrost\PrismicEloquent\Tests\Stubs\AuthorStub;
 
-class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
+class ModelIntegrationTest extends \PHPUnit\Framework\TestCase
 {
-    /**
-     * @test
-     */
-    public function itShouldFindASingleType()
+    public function testItCanFindADocumentById()
     {
-        $singlePage = ModelSingleTypeStub::single('single_page');
+        $model = PageStub::findById('a');
 
-        $this->assertInstanceOf(Model::class, $singlePage);
-        $this->assertEquals('single_page', $singlePage->type);
+        $this->assertInstanceOf(PageStub::class, $model);
     }
 
-    /**
-     * @test
-     */
-    public function itShouldFindADocumentById()
+    public function testItCanFindDocumentsByIds()
     {
-        $page = ModelStub::findById('W0XqJx8AAMLjIlBe');
+        $model = PageStub::findByIds(['a']);
 
-        $this->assertInstanceOf(Model::class, $page);
-        $this->assertEquals('W0XqJx8AAMLjIlBe', $page->id);
+        $this->assertInstanceOf(Collection::class, $model);
     }
 
-    /**
-     * @test
-     */
-    public function itShouldFindADocumentByUId()
+    public function testItCanFindAllDocuments()
     {
-        $page = ModelStub::find('a');
+        $models = PageStub::all();
 
-        $this->assertInstanceOf(Model::class, $page);
-        $this->assertEquals('a', $page->uid);
+        $this->assertInstanceOf(Collection::class, $models);
     }
 
-    /**
-     * @test
-     */
-    public function itShouldFindAllPages()
+    public function testItCanPaginateDocuments()
     {
-        $pages = ModelStub::all();
+        $models = PageStub::paginate(2);
 
-        $this->assertInstanceOf(Collection::class, $pages);
+        $this->assertInstanceOf(Collection::class, $models);
+        $this->assertCount(2, $models);
     }
 
-    /**
-     * @test
-     */
-    public function itCanApplyAWhereClause()
+    public function testItCanApplyAWhereClause()
     {
-        $page = ModelStub::where('field', 'test')->first();
+        $model = PageStub::where('title', 'test')->first();
 
-        $this->assertInstanceOf(Model::class, $page);
-        $this->assertEquals($page->field, 'test');
+        $this->assertInstanceOf(PageStub::class, $model);
     }
 
-    /**
-     * @test
-     */
-    public function itCanApplyAWhereInClause()
+    public function testItCanFetchRelatedContentFields()
     {
-        $page = ModelStub::whereIn('field', ['test'])->first();
+        $model = ModelStub::fetch('author.name')->findById('1');
 
-        $this->assertInstanceOf(Model::class, $page);
-        $this->assertEquals($page->field, 'test');
-    }
-
-    /**
-     * @test
-     */
-    public function itCanApplyAWhereTagsClause()
-    {
-        $page = ModelStub::whereTags('test')->first();
-
-        $this->assertInstanceOf(Model::class, $page);
-        $this->assertEquals($page->field, 'test');
-    }
-
-    /**
-     * @test
-     */
-    public function itCanApplyAWherePublicationDateClause()
-    {
-        $page = ModelStub::wherePublicationDate('July', 'month')->first();
-        $this->assertInstanceOf(Model::class, $page);
-
-        $page = ModelStub::wherePublicationDate(2018, 'year')->first();
-        $this->assertInstanceOf(Model::class, $page);
-    }
-
-    /**
-     * @test
-     */
-    public function itCanOrderTheResults()
-    {
-        $page = ModelStub::orderBy('title')->first();
-        $this->assertInstanceOf(Model::class, $page);
-        $this->assertEquals('A', $page->title[0]->text);
-
-        $page = ModelStub::orderBy('title desc')->first();
-        $this->assertInstanceOf(Model::class, $page);
-        $this->assertEquals('B', $page->title[0]->text);
-    }
-
-    /**
-     * @test
-     */
-    public function itCanResolveARelationship()
-    {
-        $page = ModelStub::with(['parent'])->findById('W0XqJx8AAMLjIlBe');
-        $this->assertEquals($page->parent->title[0]->text, 'B');
-    }
-
-    /**
-     * @test
-     */
-    public function itCanResolveARelationshipWithMultipleModelOptions()
-    {
-        $page = ModelStub::with(['parentWithMultipleModels'])
-            ->findById('W0XqJx8AAMLjIlBe');
-
-        $this->assertEquals($page->parent->title[0]->text, 'B');
-    }
-
-    /**
-     * @test
-     */
-    public function itCanHandleAHasManyRelationship()
-    {
-        $page = ModelStub::with(['relatedPages'])->findById('W0XqJx8AAMLjIlBe');
-        $this->assertInstanceOf(Collection::class, $page->other_pages);
-    }
-
-    /**
-     * @test
-     */
-    public function itCanPeformASearch()
-    {
-        $results = ModelStub::search('A')->get();
-
-        $this->assertInstanceOf(Collection::class, $results);
-    }
-
-    /**
-     * @test
-     */
-    public function itCanMakeAPaginatedRequest()
-    {
-        $page = ModelStub::paginate();
-        $this->assertEquals(2, $page->total());
-
-        $page = ModelStub::paginate(1);
-        $this->assertEquals(2, $page->total());
-        $this->assertEquals(2, $page->lastPage());
-    }
-
-    protected function getPackageProviders($app)
-    {
-        return ['RobinDrost\PrismicEloquent\Providers\ServiceProvider'];
-    }
-
-    protected function getEnvironmentSetUp($app)
-    {
-        $app['config']->set('prismiceloquent.url', 'https://robindrost.cdn.prismic.io/api/v2');
+        $this->assertEquals('Test', $model->author->test);
     }
 }

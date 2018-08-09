@@ -3,19 +3,17 @@
 namespace RobinDrost\PrismicEloquent;
 
 use Illuminate\Support\Collection;
+use RobinDrost\PrismicEloquent\Contracts\DocumentResolver as DocumentResolverContract;
+use RobinDrost\PrismicEloquent\Contracts\Model as ModelContract;
+use RobinDrost\PrismicEloquent\Contracts\QueryBuilder as QueryBuilderContract;
+use stdClass;
 
-abstract class Model
+abstract class Model implements ModelContract
 {
-
     /**
-     * @var \stdClass
+     * @var stdClass
      */
-    public $document;
-
-    /**
-     * @var int
-     */
-    protected $perPage = 10;
+    protected $document;
 
     /**
      * @var bool
@@ -23,235 +21,178 @@ abstract class Model
     protected $fieldsToSnakeCase = true;
 
     /**
-     * Model constructor.
+     * @var array
+     */
+    protected $resolvers = [];
+
+    /**
+     * Create a new instance of the model with a Prismic document.
      *
-     * @param \stdClass $document|null
+     * @param mixed $document
      */
     public function __construct($document = null)
     {
         if (! empty($document)) {
-            $this->attachDocument($document);
+            $this->document = $document;
         }
     }
 
     /**
-     * Helper that will check if the given property exstis inside
-     * the document data object.
-     *
-     * @param string $key
-     * @return mixed
+     * @inheritdoc
      */
-    public function __get($key)
+    public function attribute(string $name)
     {
-        if (! empty($this->document)) {
-            $method = 'get' . ucfirst($key);
-
-            if (method_exists($this, $method)) {
-                return $this->{$method}();
-            }
-
-            if ($this->hasField($key)) {
-                return $this->field($key);
-            }
-
-            if ($this->hasAttribute($key)) {
-                return $this->attribute($key);
-            }
+        if ($this->fieldsToSnakeCase) {
+            $name = snake_case($name);
         }
 
-        return $this->{$key};
+        return $this->document->{$name};
     }
 
     /**
-     * Call a method on the query builder.
+     * @inheritdoc
+     */
+    public function hasAttribute(string $name): bool
+    {
+        return property_exists($this->document, $name);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function field(string $name)
+    {
+        if ($this->fieldsToSnakeCase) {
+            $name = snake_case($name);
+        }
+
+        return $this->document->data->{$name};
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasField(string $name): bool
+    {
+        return property_exists($this->document->data, $name);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function newQuery(): QueryBuilderContract
+    {
+        return (new QueryBuilder(static::class))->whereType(static::getTypeName());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDocumentResolver(): DocumentResolverContract
+    {
+        return new DocumentResolver();
+    }
+
+    /**
+     * Execute all resolvers set through the 'with' method.
      *
-     * @param  string $method
-     * @param  array  $arguments
+     * @return ModelContract
+     */
+    public function resolveDocuments() : ModelContract
+    {
+        foreach ($this->resolvers as $resolver) {
+            call_user_func([$this, $resolver . 'Resolver']);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public static function getTypeName(): string
+    {
+        $fullPath = explode('\\', get_called_class());
+        return snake_case(array_pop($fullPath));
+    }
+
+    /**
+     * Store resolve methods to call and return a query builder.
+     *
+     * @param mixed ...$resolvers
+     * @return ModelContract
+     */
+    public static function with(...$resolvers) : ModelContract
+    {
+        $model = new static;
+        $model->resolvers = $resolvers;
+
+        return $model;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public static function newInstance($document) : ModelContract
+    {
+        return new static($document);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public static function newCollection(array $models) : Collection
+    {
+        return collect($models);
+    }
+
+    /**
+     * Return a new instance of the query builder.
+     *
+     * @param string $method
+     * @param mixed $arguments
      * @return mixed
      */
-    public function __call($method, $arguments)
+    public function __call(string $method, $arguments)
     {
         return $this->newQuery()->{$method}(...$arguments);
     }
 
     /**
-     * Handle dynamic static method calls into the method.
-     *
-     * @param  string $method
-     * @param  array  $arguments
-     * @return mixed
-     */
-    public static function __callStatic($method, $arguments)
-    {
-        return (new static)->$method(...$arguments);
-    }
-
-    /**
      * Create a new instance of the model.
      *
-     * @param  \stdClass $data
-     * @return static
+     * @param string $name
+     * @param mixed $arguments
+     * @return mixed
      */
-    public static function newInstance($data)
+    public static function __callStatic(string $name, $arguments)
     {
-        return new static($data);
+        return (new static)->{$name}(...$arguments);
     }
 
     /**
-     * Return a new collection of models.
+     * Check if the given name is either an existing attribute or field and
+     * return that.
      *
-     * @param  array $items
-     * @return Collection
+     * @param string $name
+     * @return mixed
      */
-    public function newCollection(array $items)
+    public function __get(string $name)
     {
-        return collect($items);
-    }
-
-    /**
-     * Attach a document object.
-     *
-     * @param \stdClass $data
-     */
-    public function attachDocument($data)
-    {
-        $this->document = $data;
-    }
-
-    /**
-     * Return a value from the Prismic data object.
-     *
-     * @param string $key
-     * @return mixed|null
-     */
-    public function field($key)
-    {
-        if ($this->fieldsToSnakeCase) {
-            $key = snake_case($key);
+        if ($this->hasAttribute($name)) {
+            return $this->attribute($name);
         }
 
-        if (! empty($data = $this->attribute('data'))) {
-            if (property_exists($data, $key)) {
-                return $data->{$key};
+        if ($this->hasField($name)) {
+            $fieldMethod = 'get' . ucfirst(camel_case($name)) . 'Field';
+
+            if (method_exists($this, $fieldMethod)) {
+                return $this->{$fieldMethod}($this->field($name));
             }
-        }
-    }
 
-    /**
-     * Check if the given field name is available.
-     *
-     * @param string $fieldName
-     *
-     * @return bool
-     */
-    public function hasField($fieldName)
-    {
-        if ($this->fieldsToSnakeCase) {
-            $fieldName = snake_case($fieldName);
+            return $this->field($name);
         }
 
-        return ! empty($this->field($fieldName));
-    }
-
-    /**
-     * Returns a document attribute e.g id, uid, publication_date.
-     *
-     * @param string $key
-     * @return mixed|null
-     */
-    public function attribute($key)
-    {
-        if (property_exists($this->document, $key)) {
-            return $this->document->{$key};
-        }
-    }
-
-    /**
-     * Check if the given attribute name is available.
-     *
-     * @param string $attributeName
-     *
-     * @return bool
-     */
-    public function hasAttribute($attributeName)
-    {
-        return ! empty($this->attribute($attributeName));
-    }
-
-    /**
-     * Return a new query builder instance.
-     *
-     * @return QueryBuilder
-     */
-    protected function newQuery()
-    {
-        return new QueryBuilder($this);
-    }
-
-    /**
-     * @return integer
-     */
-    protected function getPerPage()
-    {
-        return $this->perPage;
-    }
-
-    /**
-     * Define a relation on your related fields. Note that this field must
-     * hold data that can be used by the given model.
-     *
-     * $this->hasOne(Article::class, 'related_article', ['title', 'body'])
-     *
-     * or multiple model options
-     *
-     * $this->hasOne(['article' => Article::class, 'person' => Person::class], 'related_article', ['title'])
-     *
-     * @param string|array $modelName
-     * @param string $fieldName
-     * @param array $fieldsToFetch
-     *
-     * @return Relationship
-     */
-    protected function hasOne($modelName, $fieldName, array $fieldsToFetch)
-    {
-        return new Relationship($modelName, $fieldName, $fieldsToFetch);
-    }
-
-    /**
-     * The has many method is ment to be used on a group that holds a single
-     * field to a relation. Prismic describes this way to create a repeatable
-     * relation.
-     *
-     * This method will overwrite the array of the group with a collection
-     * that holds all the relational data.
-     *
-     * $this->hasMany(Article::class, 'group_field', 'field', ['title', 'body'])
-     *
-     * @param string $modelName
-     * @param string $groupField
-     * @param string $fieldName
-     * @param array $fieldsToFetch
-     *
-     * @return Collection
-     * @throws \InvalidArguementException
-     */
-    protected function hasMany($modelName, $groupField, $fieldName, array $fieldsToFetch)
-    {
-        return new Relationship($modelName, $fieldName, $fieldsToFetch, $groupField);
-    }
-
-    /**
-     * Return the Prismic type content type name. By default it will
-     * use the current class name as the content type name.
-     *
-     * It will transform the current class to lower / snake case.
-     * You can always override this method when it fails.
-     *
-     * @return string
-     */
-    public static function getTypeName()
-    {
-        $fullPath = explode('\\', get_called_class());
-        return snake_case(array_pop($fullPath));
+        return null;
     }
 }

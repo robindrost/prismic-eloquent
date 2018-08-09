@@ -11,7 +11,6 @@ return [
     |
     */
     'url' => env('PRISMIC_ELOQUENT_URL', ''),
-
     /*
     |--------------------------------------------------------------------------
     | Prismic repository access token.
@@ -22,4 +21,16 @@ return [
     |
     */
     'access_token' => env('PRISMIC_ELOQUENT_ACCESS_TOKEN', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Model namespace.
+    |--------------------------------------------------------------------------
+    |
+    | This value is only used for document resolving. You can either set it here
+    | or extend the DocumentResolver and set it through the setNamespace method
+    | in case your models live in separate folders.
+    |
+    */
+    'model_namespace' => env('PRISMIC_ELOQUENT_MODEL_NAMESPACE', '\\App\\'),
 ];
