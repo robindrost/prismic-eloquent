@@ -15,21 +15,29 @@ class DocumentResolver implements DocumentResolverContract
     protected $modelNamespace;
 
     /**
-     * @param null $modelNamespace
+     * @param string $modelNamespace
      */
-    public function __construct($modelNamespace = null)
+    public function __construct($modelNamespace = '')
     {
         $this->setModelNamespace(
-            ! empty($modelNamespace) ? $modelNamespace : config('prismiceloquent.model_namespace')
+            ! empty($modelNamespace) ? $modelNamespace : config('prismiceloquent.document_resolver.namespace')
         );
     }
 
     /**
      * @inheritdoc
      */
-    public function setModelNamespace(string $modelNamespace)
+    public function setModelNamespace($modelNamespace)
     {
         $this->modelNamespace = $modelNamespace;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getModelNamespace() : string
+    {
+        return $this->modelNamespace;
     }
 
     /**
@@ -40,11 +48,11 @@ class DocumentResolver implements DocumentResolverContract
      */
     public function resolve($parent, string $field)
     {
-        if ($this->isValid($parent->{$field})) {
-            if (property_exists($parent, 'data')) {
-                $parent = $parent->data;
-            }
+        if ($parent instanceof ModelContract) {
+            $parent = $parent->data;
+        }
 
+        if ($this->isValid($parent->{$field})) {
             $parent->{$field} = $this->transformTypeToModel($parent->{$field}->type)::findById($parent->{$field}->id);
         }
     }
@@ -101,8 +109,8 @@ class DocumentResolver implements DocumentResolverContract
     {
         if ($this->isValid($model->data->{$field})) {
             $model->data->{$field} = $this->transformTypeToModel(
-                $model->{$field}->type::newInstance($model->data->{$field})
-            );
+                $model->{$field}->type
+            )::newInstance($model->data->{$field});
         }
     }
 
@@ -115,8 +123,8 @@ class DocumentResolver implements DocumentResolverContract
             foreach ($document as $field => $data) {
                 if ($this->isValid($data)) {
                     $group[$key]->{$field} = $this->transformTypeToModel(
-                        $data->type::newInstance($data)
-                    );
+                        $data->type
+                    )::newInstance($data);
                 }
             }
         }
@@ -130,6 +138,12 @@ class DocumentResolver implements DocumentResolverContract
      */
     protected function transformTypeToModel(string $documentType) : string
     {
+        $modelMapping = config('prismiceloquent.document_resolver.models', []);
+
+        if (array_key_exists($documentType, $modelMapping)) {
+            return $modelMapping[$documentType];
+        }
+
         return $this->modelNamespace . ucfirst(camel_case($documentType));
     }
 

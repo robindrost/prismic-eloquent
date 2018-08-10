@@ -162,12 +162,4 @@ interface QueryBuilder
      * @return QueryBuilder
      */
     public function orderBy(string $field, $sort = 'desc') : QueryBuilder;
-
-    /**
-     * Set the amount of items returned.
-     *
-     * @param $pageSize
-     * @return mixed
-     */
-    public function limit(int $pageSize) : QueryBuilder;
 }

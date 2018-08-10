@@ -4,11 +4,18 @@ namespace RobinDrost\PrismicEloquent\Tests;
 
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\TestCase;
-use RobinDrost\PrismicEloquent\Tests\Stubs\PageStub;
+use RobinDrost\PrismicEloquent\Contracts\DocumentResolver;
+use RobinDrost\PrismicEloquent\Model;
+use RobinDrost\PrismicEloquent\Contracts\Model as ModelContract;
 
 class ModelTest extends TestCase
 {
     protected $documentStub;
+
+    /**
+     * @var ModelContract
+     */
+    protected $model;
 
     public function setUp()
     {
@@ -18,58 +25,78 @@ class ModelTest extends TestCase
             'type' => 'test',
             'data' => [
                 'title' => 'Test',
+                'test_field' => 'test',
             ],
         ]));
+
+        $this->model = new class() extends Model {
+            public static function getTypeName(): string
+            {
+                return 'test';
+            }
+        };
     }
 
     public function testItCanReturnTheContentType()
     {
-        $this->assertEquals('page_stub', PageStub::getTypeName());
+        $this->assertEquals('test', $this->model::getTypeName());
     }
 
     public function testItCanCreateANewInstanceOfItself()
     {
-        $this->assertInstanceOf(PageStub::class, PageStub::newInstance($this->documentStub));
+        $this->assertInstanceOf(Model::class, $this->model::newInstance($this->documentStub));
+    }
+
+    public function testItCanAccessFieldsByCamelCase()
+    {
+        $model = $this->model::newInstance($this->documentStub);
+        $this->assertEquals($this->documentStub->data->test_field, $model->testField);
+    }
+
+    public function testItCanAttachADocument()
+    {
+        $this->model->attachDocument($this->documentStub);
+        $this->assertEquals($this->documentStub->data->title, $this->model->title);
     }
 
     public function testItCanCreateACollectionOfModels()
     {
         $models = [
-            PageStub::newInstance($this->documentStub),
-            PageStub::newInstance($this->documentStub),
-            PageStub::newInstance($this->documentStub),
+            $this->model::newInstance($this->documentStub),
+            $this->model::newInstance($this->documentStub),
+            $this->model::newInstance($this->documentStub),
         ];
 
-        $collection = PageStub::newCollection($models);
+        $collection = $this->model::newCollection($models);
 
         $this->assertInstanceOf(Collection::class, $collection);
     }
 
     public function testItCanCheckIfAnAttributeExists()
     {
-        $this->assertTrue(PageStub::newInstance($this->documentStub)->hasAttribute('type'));
-        $this->assertFalse(PageStub::newInstance($this->documentStub)->hasAttribute('non_existing'));
+        $this->assertTrue($this->model::newInstance($this->documentStub)->hasAttribute('type'));
+        $this->assertFalse($this->model::newInstance($this->documentStub)->hasAttribute('non_existing'));
     }
 
     public function testItCanRetrieveAnAttribute()
     {
         $this->assertEquals(
             $this->documentStub->type,
-            PageStub::newInstance($this->documentStub)->attribute('type')
+            $this->model::newInstance($this->documentStub)->attribute('type')
         );
     }
 
     public function testItCanCheckIfAFieldExists()
     {
-        $this->assertTrue(PageStub::newInstance($this->documentStub)->hasField('title'));
-        $this->assertFalse(PageStub::newInstance($this->documentStub)->hasField('non_existing'));
+        $this->assertTrue($this->model::newInstance($this->documentStub)->hasField('title'));
+        $this->assertFalse($this->model::newInstance($this->documentStub)->hasField('non_existing'));
     }
 
     public function testItCanRetrieveAField()
     {
         $this->assertEquals(
             $this->documentStub->data->title,
-            PageStub::newInstance($this->documentStub)->field('title')
+            $this->model::newInstance($this->documentStub)->field('title')
         );
     }
 }

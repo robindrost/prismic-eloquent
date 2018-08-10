@@ -2,6 +2,7 @@
 
 namespace RobinDrost\PrismicEloquent;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -113,7 +114,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function first() : ModelContract
     {
-        return $this->limit(1)->all()->first()->resolveDocuments();
+        return $this->all()->first();
     }
 
     /**
@@ -126,6 +127,7 @@ class QueryBuilder implements QueryBuilderContract
 
         if ($query->total_results_size > $query->results_size) {
             $pagesAmount = round($query->total_results_size / $query->results_size);
+
             foreach (range(2, $pagesAmount) as $number) {
                 $results = array_merge($results, $this->pagerQuery(intval($number)));
             }
@@ -219,14 +221,14 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereNot(string $field, $value): QueryBuilderContract
     {
-        $this->addPredicate('tags', $value, 'not');
+        $this->addPredicate($field, $value, 'not');
         return $this;
     }
 
     /**
      * @inheritdoc
      */
-    public function whereLanguage($language): QueryBuilderContract
+    public function whereLanguage($language) : QueryBuilderContract
     {
         $this->addOption('lang', $language);
         return $this;
@@ -267,21 +269,14 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function orderBy(string $field, $sort = 'desc'): QueryBuilderContract
     {
-        if (in_array($field, self::DOCUMENT_ATTRIBUTES)) {
+        if (! in_array($field, self::DOCUMENT_ATTRIBUTES)) {
+            $field = "my.{$this->model::getTypeName()}.{$field}";
+        } else {
             $field = "document.{$field}";
         }
 
         $this->addOption('orderings', "[{$field}]");
 
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function limit(int $pageSize) : QueryBuilderContract
-    {
-        $this->addOption('pageSize', $pageSize);
         return $this;
     }
 

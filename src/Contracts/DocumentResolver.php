@@ -39,8 +39,15 @@ interface DocumentResolver
     /**
      * Set the model namespace. This is used to link document types to models.
      *
-     * @param string $modelNamespace
+     * @param string|null $modelNamespace
      * @return mixed
      */
-    public function setModelNamespace(string $modelNamespace);
+    public function setModelNamespace($modelNamespace);
+
+    /**
+     * Return the current model namespace.
+     *
+     * @return string
+     */
+    public function getModelNamespace() : string;
 }

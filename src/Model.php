@@ -190,15 +190,15 @@ abstract class Model implements ModelContract
             return $this->attribute($name);
         }
 
+        if ($this->fieldsToSnakeCase) {
+            $name = snake_case($name);
+        }
+
         if ($this->hasField($name)) {
             $fieldMethod = 'get' . ucfirst(camel_case($name)) . 'Field';
 
             if (method_exists($this, $fieldMethod)) {
                 return $this->{$fieldMethod}($this->field($name));
-            }
-
-            if ($this->fieldsToSnakeCase) {
-                $name = snake_case($name);
             }
 
             return $this->field($name);
