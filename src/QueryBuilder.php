@@ -82,9 +82,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function find(string $uid): ModelContract
     {
-        return $this->model->attachDocument(
-            $this->api->getByUID($this->model::getTypeName(), $uid, $this->options)
-        )->resolveDocuments();
+        return $this->where('uid', $uid)->first();
     }
 
     /**
@@ -92,9 +90,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function findById(string $id): ModelContract
     {
-        return $this->model->attachDocument(
-            $this->api->getByID($id, $this->options)
-        )->resolveDocuments();
+        return $this->where('id', $id)->first();
     }
 
     /**
@@ -102,11 +98,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function findByIds(array $ids): Collection
     {
-        $models = array_map(function ($document) {
-            return (clone $this->model)->attachDocument($document)->resolveDocuments();
-        }, $this->api()->getByIDs($ids)->results);
-
-        return $this->model::newCollection($models);
+        return $this->whereIn('id', $ids)->all();
     }
 
     /**
@@ -283,7 +275,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function addPredicate(string $field, $value, $method = null)
+    public function addPredicate(string $field, $value, $method = null) : QueryBuilderContract
     {
         if (! in_array($field, self::DOCUMENT_ATTRIBUTES)) {
             $field = "my.{$this->model::getTypeName()}.{$field}";
@@ -300,6 +292,8 @@ class QueryBuilder implements QueryBuilderContract
         }
 
         $this->predicates[] = $predicate;
+
+        return $this;
     }
 
     /**
