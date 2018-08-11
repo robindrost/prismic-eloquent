@@ -168,8 +168,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereType(String $type): QueryBuilderContract
     {
-        $this->addPredicate('type', $type);
-        return $this;
+        return $this->addPredicate('type', $type);
     }
 
     /**
@@ -177,8 +176,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereTag(String $tag): QueryBuilderContract
     {
-        $this->addPredicate('tags', [$tag], 'at');
-        return $this;
+        return $this->addPredicate('tags', [$tag], 'at');
     }
 
     /**
@@ -186,8 +184,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereTags(array $tags): QueryBuilderContract
     {
-        $this->addPredicate('tags', $tags);
-        return $this;
+        return $this->addPredicate('tags', $tags);
     }
 
     /**
@@ -195,8 +192,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function where(string $field, $value): QueryBuilderContract
     {
-        $this->addPredicate($field, $value);
-        return $this;
+        return $this->addPredicate($field, $value);
     }
 
     /**
@@ -204,8 +200,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereIn(string $field, array $values): QueryBuilderContract
     {
-        $this->addPredicate($field, $values);
-        return $this;
+        return $this->addPredicate($field, $values);
     }
 
     /**
@@ -213,8 +208,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereNot(string $field, $value): QueryBuilderContract
     {
-        $this->addPredicate($field, $value, 'not');
-        return $this;
+        return $this->addPredicate($field, $value, 'not');
     }
 
     /**
@@ -222,8 +216,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function whereLanguage($language) : QueryBuilderContract
     {
-        $this->addOption('lang', $language);
-        return $this;
+        return $this->addOption('lang', $language);
     }
 
     /**
@@ -231,8 +224,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function search($text) : QueryBuilderContract
     {
-        $this->addPredicate('document', $text, 'fulltext');
-        return $this;
+        return $this->addPredicate('document', $text, 'fulltext');
     }
 
     /**
@@ -240,8 +232,7 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function fetch(...$fields): QueryBuilderContract
     {
-        $this->addOption('fetchLinks', implode(',', $fields));
-        return $this;
+        return $this->addOption('fetchLinks', implode(',', $fields));
     }
 
     /**
@@ -249,11 +240,9 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function select(...$fields): QueryBuilderContract
     {
-        $this->addOption('fetch', implode(',', array_map(function ($field) {
+        return $this->addOption('fetch', implode(',', array_map(function ($field) {
             return "{$this->model::getTypeName()}.{$field}";
         }, $fields)));
-
-        return $this;
     }
 
     /**
@@ -299,9 +288,10 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function addOption(string $option, $value)
+    public function addOption(string $option, $value) : QueryBuilderContract
     {
         $this->options[$option] = $value;
+        return $this;
     }
 
     /**
