@@ -20,7 +20,6 @@ class QueryBuilder implements QueryBuilderContract
      */
     protected const DOCUMENT_ATTRIBUTES = [
         'id',
-        'uid',
         'type',
         'href',
         'tags',
