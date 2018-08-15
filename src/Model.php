@@ -164,7 +164,7 @@ abstract class Model implements ModelContract
 
             if (!empty($document)) {
                 $parent->{$group}[$key]->{$field} =
-                    $this->relationToModel($relation, $document->type)::newInstance($document);
+                    $this->relationToModel($relation, $document->type)::newInstance($document->document);
             }
         }
     }
