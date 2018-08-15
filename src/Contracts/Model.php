@@ -47,13 +47,6 @@ interface Model
     public function newQuery() : QueryBuilder;
 
     /**
-     * Resolve related documents and return the model.
-     *
-     * @return Model
-     */
-    public function resolveDocuments() : Model;
-
-    /**
      * Attach a document object to the model.
      *
      * @param mixed $document

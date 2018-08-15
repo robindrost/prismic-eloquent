@@ -96,6 +96,12 @@ abstract class Model implements ModelContract
     public function resolveDocuments() : ModelContract
     {
         foreach ($this->resolvers as $resolver) {
+            if (! method_exists($this, $resolver)) {
+                throw new \InvalidArgumentException(
+                    "Method $resolver does not exists on model " . static::class . '.'
+                );
+            }
+
             $this->{$resolver}();
         }
 
@@ -115,14 +121,14 @@ abstract class Model implements ModelContract
             $parent = $this->data;
         }
 
-        if ($this->isResolvable($parent->{$field})) {
-            if ($this->isEagerLoaded($parent->{$field})) {
-                $parent->{$field} =
-                    $this->relationToModel($relation, $parent->{$field}->type)::newInstance($parent->{$field});
-            } else {
-                $parent->{$field} =
-                    $this->relationToModel($relation, $parent->{$field}->type)::findById($parent->{$field}->id);
-            }
+        if (! $this-isResolvable($parent->{$field})) {
+            return $parent->{$field};
+        }
+
+        if ($this->isEagerLoaded($parent->{$field})) {
+            $parent->{$field} = $this->relationToModel($relation, $parent->{$field}->type)::newInstance($parent->{$field});
+        } else {
+            $parent->{$field} = $this->relationToModel($relation, $parent->{$field}->type)::findById($parent->{$field}->id);
         }
 
         return $parent->{$field};
@@ -145,13 +151,14 @@ abstract class Model implements ModelContract
         $refs = [];
 
         foreach ($parent->{$group} as $key => $item) {
-            if ($this->isResolvable($item->{$field})) {
-                if ($this->isEagerLoaded($item->{$field})) {
-                    $item->{$field} =
-                        $this->relationToModel($relation, $item->{$field}->type)::newInstance($item->{$field});
-                } else {
-                    $refs[$key] = $item->{$field}->id;
-                }
+            if (! $this->isResolvable($item->{$field})) {
+                continue;
+            }
+
+            if ($this->isEagerLoaded($item->{$field})) {
+                $item->{$field} = $this->relationToModel($relation, $item->{$field}->type)::newInstance($item->{$field});
+            } else {
+                $refs[$key] = $item->{$field}->id;
             }
         }
 
