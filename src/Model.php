@@ -96,7 +96,7 @@ abstract class Model implements ModelContract
     public function resolveDocuments() : ModelContract
     {
         foreach ($this->resolvers as $resolver) {
-            if (! method_exists($this, $resolver)) {
+            if (!method_exists($this, $resolver)) {
                 throw new \InvalidArgumentException(
                     "Method $resolver does not exists on model " . static::class . '.'
                 );
@@ -106,74 +106,6 @@ abstract class Model implements ModelContract
         }
 
         return $this;
-    }
-
-    /**
-     * Define has one relation for a field.
-     *
-     * @param string $relation
-     * @param string $field
-     * @param object|null $parent
-     */
-    protected function hasOne($relation, $field, $parent = null)
-    {
-        if (empty($parent)) {
-            $parent = $this->data;
-        }
-
-        if (! $this-isResolvable($parent->{$field})) {
-            return $parent->{$field};
-        }
-
-        if ($this->isEagerLoaded($parent->{$field})) {
-            $parent->{$field} = $this->relationToModel($relation, $parent->{$field}->type)::newInstance($parent->{$field});
-        } else {
-            $parent->{$field} = $this->relationToModel($relation, $parent->{$field}->type)::findById($parent->{$field}->id);
-        }
-
-        return $parent->{$field};
-    }
-
-    /**
-     * Define has many relation for a field.
-     *
-     * @param string $relation
-     * @param string $group
-     * @param string $field
-     * @param object|null $parent
-     */
-    protected function hasMany($relation, $group, $field, $parent = null)
-    {
-        if (empty($parent)) {
-            $parent = $this->data;
-        }
-
-        $refs = [];
-
-        foreach ($parent->{$group} as $key => $item) {
-            if (! $this->isResolvable($item->{$field})) {
-                continue;
-            }
-
-            if ($this->isEagerLoaded($item->{$field})) {
-                $item->{$field} = $this->relationToModel($relation, $item->{$field}->type)::newInstance($item->{$field});
-            } else {
-                $refs[$key] = $item->{$field}->id;
-            }
-        }
-
-        $documents = static::newInstance(null)->newEmptyQuery()->findByIds($refs);
-
-        foreach ($refs as $key => $ref) {
-            $document = $documents->first(function ($document) use ($ref) {
-                return $document->id == $ref;
-            });
-
-            if (!empty($document)) {
-                $parent->{$group}[$key]->{$field} =
-                    $this->relationToModel($relation, $document->type)::newInstance($document->document);
-            }
-        }
     }
 
     /**
@@ -322,5 +254,76 @@ abstract class Model implements ModelContract
         }
 
         return null;
+    }
+
+    /**
+     * Define has one relation for a field.
+     *
+     * @param string $relation
+     * @param string $field
+     * @param object|null $parent
+     */
+    protected function hasOne($relation, $field, $parent = null)
+    {
+        if (empty($parent)) {
+            $parent = $this->data;
+        }
+
+        if (!$this - isResolvable($parent->{$field})) {
+            return $parent->{$field};
+        }
+
+        if ($this->isEagerLoaded($parent->{$field})) {
+            $parent->{$field} =
+                $this->relationToModel($relation, $parent->{$field}->type)::newInstance($parent->{$field});
+        } else {
+            $parent->{$field} =
+                $this->relationToModel($relation, $parent->{$field}->type)::findById($parent->{$field}->id);
+        }
+
+        return $parent->{$field};
+    }
+
+    /**
+     * Define has many relation for a field.
+     *
+     * @param string $relation
+     * @param string $group
+     * @param string $field
+     * @param object|null $parent
+     */
+    protected function hasMany($relation, $group, $field, $parent = null)
+    {
+        if (empty($parent)) {
+            $parent = $this->data;
+        }
+
+        $refs = [];
+
+        foreach ($parent->{$group} as $key => $item) {
+            if (!$this->isResolvable($item->{$field})) {
+                continue;
+            }
+
+            if ($this->isEagerLoaded($item->{$field})) {
+                $item->{$field} =
+                    $this->relationToModel($relation, $item->{$field}->type)::newInstance($item->{$field});
+            } else {
+                $refs[$key] = $item->{$field}->id;
+            }
+        }
+
+        $documents = static::newInstance(null)->newEmptyQuery()->findByIds($refs);
+
+        foreach ($refs as $key => $ref) {
+            $document = $documents->first(function ($document) use ($ref) {
+                return $document->id == $ref;
+            });
+
+            if (!empty($document)) {
+                $parent->{$group}[$key]->{$field} =
+                    $this->relationToModel($relation, $document->type)::newInstance($document->document);
+            }
+        }
     }
 }
