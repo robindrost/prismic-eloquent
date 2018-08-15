@@ -47,13 +47,6 @@ interface Model
     public function newQuery() : QueryBuilder;
 
     /**
-     * Return a DocumentResolver class.
-     *
-     * @return DocumentResolver
-     */
-    public function getDocumentResolver() : DocumentResolver;
-
-    /**
      * Resolve related documents and return the model.
      *
      * @return Model

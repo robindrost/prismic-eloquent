@@ -3,7 +3,6 @@
 namespace RobinDrost\PrismicEloquent;
 
 use Illuminate\Support\Collection;
-use RobinDrost\PrismicEloquent\Contracts\DocumentResolver as DocumentResolverContract;
 use RobinDrost\PrismicEloquent\Contracts\Model as ModelContract;
 use RobinDrost\PrismicEloquent\Contracts\QueryBuilder as QueryBuilderContract;
 use stdClass;
@@ -32,7 +31,7 @@ abstract class Model implements ModelContract
      */
     public function __construct($document = null)
     {
-        if (! empty($document)) {
+        if (!empty($document)) {
             $this->attachDocument($document);
         }
     }
@@ -52,7 +51,7 @@ abstract class Model implements ModelContract
     /**
      * @inheritdoc
      */
-    public function hasAttribute(string $name): bool
+    public function hasAttribute(string $name) : bool
     {
         return property_exists($this->document, $name);
     }
@@ -68,7 +67,7 @@ abstract class Model implements ModelContract
     /**
      * @inheritdoc
      */
-    public function hasField(string $name): bool
+    public function hasField(string $name) : bool
     {
         return property_exists($this->document->data, $name);
     }
@@ -76,17 +75,17 @@ abstract class Model implements ModelContract
     /**
      * @inheritdoc
      */
-    public function newQuery(): QueryBuilderContract
+    public function newQuery() : QueryBuilderContract
     {
         return (new QueryBuilder($this))->whereType(static::getTypeName());
     }
 
     /**
-     * @inheritdoc
+     * Return a query object withouth a type.
      */
-    public function getDocumentResolver(): DocumentResolverContract
+    public function newEmptyQuery() : QueryBuilderContract
     {
-        return new DocumentResolver();
+        return (new QueryBuilder($this));
     }
 
     /**
@@ -104,9 +103,121 @@ abstract class Model implements ModelContract
     }
 
     /**
+     * Define has one relation for a field.
+     *
+     * @param string $relation
+     * @param string $field
+     * @param object|null $parent
+     */
+    protected function hasOne($relation, $field, $parent = null)
+    {
+        if (empty($parent)) {
+            $parent = $this->data;
+        }
+
+        if ($this->isResolvable($parent->{$field})) {
+            if ($this->isEagerLoaded($parent->{$field})) {
+                $parent->{$field} =
+                    $this->relationToModel($relation, $parent->{$field}->type)::newInstance($parent->{$field});
+            } else {
+                $parent->{$field} =
+                    $this->relationToModel($relation, $parent->{$field}->type)::findById($parent->{$field}->id);
+            }
+        }
+
+        return $parent->{$field};
+    }
+
+    /**
+     * Define has many relation for a field.
+     *
+     * @param string $relation
+     * @param string $group
+     * @param string $field
+     * @param object|null $parent
+     */
+    protected function hasMany($relation, $group, $field, $parent = null)
+    {
+        if (empty($parent)) {
+            $parent = $this->data;
+        }
+
+        $refs = [];
+
+        foreach ($parent->{$group} as $key => $item) {
+            if ($this->isResolvable($item->{$field})) {
+                if ($this->isEagerLoaded($item->{$field})) {
+                    $item->{$field} =
+                        $this->relationToModel($relation, $item->{$field}->type)::newInstance($item->{$field});
+                } else {
+                    $refs[$key] = $item->{$field}->id;
+                }
+            }
+        }
+
+        $documents = static::newInstance(null)->newEmptyQuery()->findByIds($refs);
+
+        foreach ($refs as $key => $ref) {
+            $document = $documents->first(function ($document) use ($ref) {
+                return $document->id == $ref;
+            });
+
+            if (!empty($document)) {
+                $parent->{$group}[$key]->{$field} =
+                    $this->relationToModel($relation, $document->type)::newInstance($document);
+            }
+        }
+    }
+
+    /**
+     * Check if a field is resolvable / broken.
+     *
+     * @param object $data
+     *
+     * @return bool
+     */
+    protected function isResolvable($data)
+    {
+        return !$data instanceof Model
+            && is_object($data)
+            && property_exists($data, 'isBroken')
+            && !$data->isBroken
+            && property_exists($data, 'id');
+    }
+
+    /**
+     * Resolve the corrent relation model based on the document type.
+     *
+     * @param mixed $relation
+     * @param string $type
+     *
+     * @return string
+     */
+    protected function relationToModel($relation, string $type) : string
+    {
+        if (is_array($relation)) {
+            return $relation[$type];
+        }
+
+        return $relation;
+    }
+
+    /**
+     * Check if a field already has a data attribute.
+     *
+     * @param object $field
+     *
+     * @return bool
+     */
+    protected function isEagerLoaded($field)
+    {
+        return property_exists($field, 'data');
+    }
+
+    /**
      * @inheritdoc
      */
-    public static function getTypeName(): string
+    public static function getTypeName() : string
     {
         $fullPath = explode('\\', get_called_class());
         return snake_case(array_pop($fullPath));
@@ -118,12 +229,11 @@ abstract class Model implements ModelContract
      * @param mixed ...$resolvers
      * @return ModelContract
      */
-    public static function with(...$resolvers) : ModelContract
+    public static function with(...$methods) : ModelContract
     {
         $model = new static;
-        $model->resolvers = array_map(function ($resolver) {
-            return $resolver . 'Resolver';
-        }, $resolvers);
+
+        $model->resolvers = $methods;
 
         return $model;
     }

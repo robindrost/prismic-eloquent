@@ -135,24 +135,24 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
 
 class ModelStub extends Model
 {
-    public function testResolver()
+    public function test()
     {
-        $this->getDocumentResolver()->resolve($this, 'related_test');
+        $this->hasOne(ModelStub::class, 'related_test');
     }
 
-    public function testManyResolver()
+    public function testMany()
     {
-        $this->getDocumentResolver()->resolveMany($this->related_tests);
+        $this->hasMany(ModelStub::class, 'related_tests', 'test');
     }
 
-    public function testEagerLoadedResolver()
+    public function testEagerLoaded()
     {
-        $this->getDocumentResolver()->resolveEagerLoaded($this, 'related_test');
+        $this->hasOne(ModelStub::class, 'related_test');
     }
 
-    public function testManyEagerLoadedResolver()
+    public function testManyEagerLoaded()
     {
-        $this->getDocumentResolver()->resolveManyEagerLoaded($this->related_tests);
+        $this->hasMany(ModelStub::class, 'related_tests', 'test');
     }
 
     public static function getTypeName(): string
