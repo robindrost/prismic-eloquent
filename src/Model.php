@@ -134,11 +134,7 @@ abstract class Model implements ModelContract
      */
     protected function relationToModel($relation, string $type) : string
     {
-        if (is_array($relation)) {
-            return $relation[$type];
-        }
-
-        return $relation;
+        return is_array($relation) ? $relation[$type] : $relation;
     }
 
     /**
@@ -269,7 +265,7 @@ abstract class Model implements ModelContract
             $parent = $this->data;
         }
 
-        if (!$this - isResolvable($parent->{$field})) {
+        if (!$this->isResolvable($parent->{$field})) {
             return $parent->{$field};
         }
 
@@ -313,7 +309,9 @@ abstract class Model implements ModelContract
             }
         }
 
-        $documents = static::newInstance(null)->newEmptyQuery()->findByIds($refs);
+        if (!empty($refs)) {
+            $documents = static::newInstance(null)->newEmptyQuery()->findByIds($refs);
+        }
 
         foreach ($refs as $key => $ref) {
             $document = $documents->first(function ($document) use ($ref) {
@@ -325,5 +323,7 @@ abstract class Model implements ModelContract
                     $this->relationToModel($relation, $document->type)::newInstance($document->document);
             }
         }
+
+        return $parent->{$group};
     }
 }
