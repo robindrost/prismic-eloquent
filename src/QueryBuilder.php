@@ -63,23 +63,23 @@ class QueryBuilder implements QueryBuilderContract
     public function __construct(ModelContract $model, Api $api = null)
     {
         $this->model = $model;
-        $this->api = ! empty($api) ? $api : resolve(Api::class);
+        $this->api = !empty($api) ? $api : resolve(Api::class);
     }
 
     /**
      * @inheritdoc
      */
-    public function single(): ModelContract
+    public function single() : ModelContract
     {
         return $this->model->attachDocument(
             $this->api->getSingle($this->model::getTypeName(), $this->options)
-        )->resolveDocuments();
+        )->resolveRelationships();
     }
 
     /**
      * @inheritdoc
      */
-    public function find(string $uid): ModelContract
+    public function find(string $uid) : ModelContract
     {
         return $this->where('uid', $uid)->first();
     }
@@ -87,7 +87,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function findById(string $id): ModelContract
+    public function findById(string $id) : ModelContract
     {
         return $this->where('id', $id)->first();
     }
@@ -95,7 +95,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function findByIds(array $ids): Collection
+    public function findByIds(array $ids) : Collection
     {
         return $this->whereIn('id', $ids)->all();
     }
@@ -111,7 +111,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function all(): Collection
+    public function all() : Collection
     {
         $query = $this->pagerQuery();
         $results = $query->results;
@@ -125,7 +125,7 @@ class QueryBuilder implements QueryBuilderContract
         }
 
         $models = array_map(function ($result) {
-            return (clone $this->model)->attachDocument($result)->resolveDocuments();
+            return (clone $this->model)->attachDocument($result)->resolveRelationships();
         }, $results);
 
         return $this->model::newCollection($models);
@@ -139,15 +139,15 @@ class QueryBuilder implements QueryBuilderContract
         array $fields = [],
         string $pageName = 'page',
         $page = null
-    ): LengthAwarePaginatorContract {
-        $page = $page ?: Paginator::resolveCurrentPage($pageName);
+    ) : LengthAwarePaginatorContract {
+        $page = $page ? : Paginator::resolveCurrentPage($pageName);
 
         $this->addOption('pageSize', $perPage);
         $query = $this->pagerQuery($page);
         $results = $query->results;
 
         $items = $this->model::newCollection(array_map(function ($result) {
-            return (clone $this->model)->attachDocument($result)->resolveDocuments();
+            return (clone $this->model)->attachDocument($result)->resolveRelationships();
         }, $results));
 
         return Container::getInstance()->makeWith(LengthAwarePaginator::class, [
@@ -165,7 +165,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function whereType(String $type): QueryBuilderContract
+    public function whereType(String $type) : QueryBuilderContract
     {
         return $this->addPredicate('type', $type);
     }
@@ -173,7 +173,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function whereTag(String $tag): QueryBuilderContract
+    public function whereTag(String $tag) : QueryBuilderContract
     {
         return $this->addPredicate('tags', [$tag], 'at');
     }
@@ -181,7 +181,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function whereTags(array $tags): QueryBuilderContract
+    public function whereTags(array $tags) : QueryBuilderContract
     {
         return $this->addPredicate('tags', $tags);
     }
@@ -189,7 +189,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function where(string $field, $value): QueryBuilderContract
+    public function where(string $field, $value) : QueryBuilderContract
     {
         return $this->addPredicate($field, $value);
     }
@@ -197,7 +197,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function whereIn(string $field, array $values): QueryBuilderContract
+    public function whereIn(string $field, array $values) : QueryBuilderContract
     {
         return $this->addPredicate($field, $values);
     }
@@ -205,7 +205,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function whereNot(string $field, $value): QueryBuilderContract
+    public function whereNot(string $field, $value) : QueryBuilderContract
     {
         return $this->addPredicate($field, $value, 'not');
     }
@@ -229,7 +229,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function fetch(...$fields): QueryBuilderContract
+    public function fetch(...$fields) : QueryBuilderContract
     {
         return $this->addOption('fetchLinks', implode(',', $fields));
     }
@@ -237,7 +237,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function select(...$fields): QueryBuilderContract
+    public function select(...$fields) : QueryBuilderContract
     {
         return $this->addOption('fetch', implode(',', array_map(function ($field) {
             return "{$this->model::getTypeName()}.{$field}";
@@ -247,9 +247,9 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function orderBy(string $field, $sort = 'desc'): QueryBuilderContract
+    public function orderBy(string $field, $sort = 'desc') : QueryBuilderContract
     {
-        if (! in_array($field, self::DOCUMENT_ATTRIBUTES)) {
+        if (!in_array($field, self::DOCUMENT_ATTRIBUTES)) {
             $field = "my.{$this->model::getTypeName()}.{$field}";
         } else {
             $field = "document.{$field}";
@@ -265,13 +265,13 @@ class QueryBuilder implements QueryBuilderContract
      */
     public function addPredicate(string $field, $value, $method = null) : QueryBuilderContract
     {
-        if (! in_array($field, self::DOCUMENT_ATTRIBUTES)) {
+        if (!in_array($field, self::DOCUMENT_ATTRIBUTES)) {
             $field = "my.{$this->model::getTypeName()}.{$field}";
         } else {
             $field = "document.{$field}";
         }
 
-        if (! empty($method)) {
+        if (!empty($method)) {
             $predicate = Predicates::{$method}($field, $value);
         } elseif (is_array($value)) {
             $predicate = Predicates::any($field, $value);
