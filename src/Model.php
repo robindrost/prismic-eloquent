@@ -3,7 +3,6 @@
 namespace RobinDrost\PrismicEloquent;
 
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use RobinDrost\PrismicEloquent\Contracts\Model as ModelContract;
 use RobinDrost\PrismicEloquent\Contracts\QueryBuilder as QueryBuilderContract;
 use stdClass;
