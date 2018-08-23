@@ -122,6 +122,12 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
         }
     }
 
+    public function testItCanHandleScopes()
+    {
+        $model = ModelStub::testTitle()->first();
+        $this->assertEquals('test', $model->title);
+    }
+
     protected function getPackageProviders($app)
     {
         return ['RobinDrost\PrismicEloquent\Providers\ServiceProvider'];
@@ -155,7 +161,12 @@ class ModelStub extends Model
         $this->hasMany(ModelStub::class, 'related_tests', 'test');
     }
 
-    public static function getTypeName(): string
+    public function scopeTestTitle($query)
+    {
+        $query->where('title', 'test');
+    }
+
+    public static function getTypeName() : string
     {
         return 'test';
     }

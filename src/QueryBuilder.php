@@ -316,4 +316,25 @@ class QueryBuilder implements QueryBuilderContract
             array_merge($this->options, ['page' => $page])
         );
     }
+
+    /**
+     * Implements the static __call method that will check if the give call is
+     * a scope method on the model.
+     *
+     * @param string $method
+     * @param mixed $arguments
+     *
+     * @return QueryBuilderContract
+     */
+    public function __call($method, $arguments)
+    {
+        $scope = 'scope' . ucfirst($method);
+
+        if (method_exists($this->model, $scope)) {
+            $this->model->{$scope}($this, ...$arguments);
+            return $this;
+        }
+
+        return $this->{$method}(...$arguments);
+    }
 }
