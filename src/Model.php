@@ -12,14 +12,25 @@ abstract class Model implements ModelContract
     use Relationships;
 
     /**
+     * The Prismic document object.
+     *
      * @var stdClass
      */
     protected $document;
 
     /**
+     * Convert field names to snake case.
+     *
      * @var bool
      */
     protected $fieldsToSnakeCase = true;
+
+    /**
+     * Enable or disable caching for this specific model.
+     *
+     * @var bool
+     */
+    public $cacheEnabled = true;
 
     /**
      * Create a new instance of the model with a Prismic document.

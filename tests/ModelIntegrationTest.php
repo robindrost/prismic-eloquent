@@ -135,7 +135,7 @@ class ModelIntegrationTest extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         $app['config']->set('prismiceloquent.url', 'https://robindrost.cdn.prismic.io/api/v2');
-        $app['config']->set('prismiceloquent.document_resolver.models.test', ModelStub::class);
+        $app['config']->set('prismiceloquent.cache.enabled', true);
     }
 }
 

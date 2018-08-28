@@ -63,6 +63,11 @@ class QueryBuilder implements QueryBuilderContract
     public function __construct(ModelContract $model, Api $api = null)
     {
         $this->model = $model;
+
+        if (!$this->model->cacheEnabled) {
+            config(['prismiceloquent.cache.enabled' => false]);
+        }
+
         $this->api = !empty($api) ? $api : resolve(Api::class);
     }
 
