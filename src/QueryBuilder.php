@@ -69,7 +69,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function single() : ModelContract
+    public function single() : ? ModelContract
     {
         return $this->model->attachDocument(
             $this->api->getSingle($this->model::getTypeName(), $this->options)
@@ -79,7 +79,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function find(string $uid) : ModelContract
+    public function find(string $uid) : ? ModelContract
     {
         return $this->where('uid', $uid)->first();
     }
@@ -87,7 +87,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function findById(string $id) : ModelContract
+    public function findById(string $id) : ? ModelContract
     {
         return $this->where('id', $id)->first();
     }
