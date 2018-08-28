@@ -103,7 +103,7 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * @inheritdoc
      */
-    public function first() : ModelContract
+    public function first() : ? ModelContract
     {
         return $this->all()->first();
     }
