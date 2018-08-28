@@ -64,11 +64,11 @@ trait Relationships
         }
 
         if ($this->isEagerLoaded($parent->{$field})) {
-            $parent->{$field} =
-                $this->relationToModel($relation, $parent->{$field}->type)::newInstance($parent->{$field});
+            $model = $this->relationToModel($relation, $parent->{$field}->type);
+            $parent->{$field} = $model::newInstance($parent->{$field});
         } else {
-            $parent->{$field} =
-                $this->relationToModel($relation, $parent->{$field}->type)::findById($parent->{$field}->id);
+            $model = $this->relationToModel($relation, $parent->{$field}->type);
+            $parent->{$field} = $model::findById($parent->{$field}->id);
         }
 
         return $parent->{$field};
@@ -96,8 +96,8 @@ trait Relationships
             }
 
             if ($this->isEagerLoaded($item->{$field})) {
-                $item->{$field} =
-                    $this->relationToModel($relation, $item->{$field}->type)::newInstance($item->{$field});
+                $model = $this->relationToModel($relation, $item->{$field}->type);
+                $item->{$field} = $model::newInstance($item->{$field});
             } else {
                 $refs[$key] = $item->{$field}->id;
             }
@@ -113,8 +113,8 @@ trait Relationships
             });
 
             if (!empty($document)) {
-                $parent->{$group}[$key]->{$field} =
-                    $this->relationToModel($relation, $document->type)::newInstance($document->document);
+                $model = $this->relationToModel($relation, $document->type);
+                $parent->{$group}[$key]->{$field} = $model::newInstance($document->document);
             }
         }
 
