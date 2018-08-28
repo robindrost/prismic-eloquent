@@ -45,7 +45,7 @@ interface QueryBuilder
      *
      * @return Model
      */
-    public function first() : Model;
+    public function first() : ? Model;
 
     /**
      * Find all documents based on the current query scope.
