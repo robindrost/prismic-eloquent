@@ -44,5 +44,5 @@ return [
 
         // Time to live of the cache. Setting this value to 0 will cache it 'forever'.
         'ttl' => 5,
-    ]
+    ],
 ];

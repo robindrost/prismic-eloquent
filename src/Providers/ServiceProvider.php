@@ -23,7 +23,7 @@ class ServiceProvider extends LaravelServiceProvider
                 config('prismiceloquent.url'),
                 config('prismiceloquent.access_token'),
                 null,
-                config('prismiceloquent.use_cache') ? resolve('prismiceloquent.cache') : null,
+                config('prismiceloquent.cache.enabled') ? resolve('prismiceloquent.cache') : null,
                 config('priismiceloquent.cache.ttl', 5)
             );
         });
