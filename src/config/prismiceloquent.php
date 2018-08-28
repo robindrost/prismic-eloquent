@@ -37,7 +37,7 @@ return [
      */
     'cache' => [
         // Enable or disable the caching layer.
-        'enabled' => false,
+        'enabled' => env('PRISMIC_ELOQUENT_ENABLE_CACHE', false),
 
         // This is the prefix string used on cache keys.
         'prefix' => 'prismiceloquent',
