@@ -14,7 +14,7 @@ interface QueryBuilder
      *
      * @return Model
      */
-    public function single() : Model;
+    public function single() : ? Model;
 
     /**
      * Find a content item based on its UID field.
@@ -22,7 +22,7 @@ interface QueryBuilder
      * @param string $uid
      * @return Model
      */
-    public function find(string $uid) : Model;
+    public function find(string $uid) : ? Model;
 
     /**
      * Find a content item based on the given ID.
@@ -30,7 +30,7 @@ interface QueryBuilder
      * @param string $id
      * @return Model
      */
-    public function findById(string $id) : Model;
+    public function findById(string $id) : ? Model;
 
     /**
      * Find multiple content items based on an array of ID's.
