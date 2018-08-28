@@ -1,16 +1,18 @@
 {
   "name": "robindrost/prismic-eloquent",
-  "authors": [{
-    "name": "Robin Drost",
-    "email": "robindrost@gmail.com",
-    "homepage": "https://github.com/robindrost"
-  }],
+  "authors": [
+    {
+      "name": "Robin Drost",
+      "email": "robindrost@gmail.com",
+      "homepage": "https://github.com/robindrost"
+    }
+  ],
   "license": "MIT",
   "version": "0.0.7",
   "description": "Laravel package that let you use the Prismic api in a more (friendly) eloquent like way.",
   "require": {
     "php": "^7.1",
-    "prismic/php-sdk": "dev-master",
+    "prismic/php-sdk": "4.0.0-beta",
     "illuminate/support": "^5.5"
   },
   "require-dev": {
