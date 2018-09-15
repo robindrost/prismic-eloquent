@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "d9fc0d49e8ad02d61cc5902921d90e1f",
+    "content-hash": "7e60b60a04358a6d57a175bac5bbffcd",
     "packages": [
         {
             "name": "doctrine/inflector",
@@ -861,16 +861,16 @@
         },
         {
             "name": "prismic/php-sdk",
-            "version": "4.0.0-beta",
+            "version": "5.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/prismicio/php-kit.git",
-                "reference": "30b0fac792541a0dc22c6b1efad5b6360fa6d199"
+                "reference": "b3dcb6de9b63fbddcaa60570e21232992e9d7765"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/prismicio/php-kit/zipball/30b0fac792541a0dc22c6b1efad5b6360fa6d199",
-                "reference": "30b0fac792541a0dc22c6b1efad5b6360fa6d199",
+                "url": "https://api.github.com/repos/prismicio/php-kit/zipball/b3dcb6de9b63fbddcaa60570e21232992e9d7765",
+                "reference": "b3dcb6de9b63fbddcaa60570e21232992e9d7765",
                 "shasum": ""
             },
             "require": {
@@ -878,11 +878,12 @@
                 "ext-json": "*",
                 "ext-mbstring": "*",
                 "guzzlehttp/guzzle": "^6.3",
-                "php": ">=5.5.0"
+                "php": ">=7.1"
             },
             "require-dev": {
-                "phpdocumentor/phpdocumentor": "^2.3.1",
-                "phpunit/phpunit": "^4.8"
+                "phpdocumentor/phpdocumentor": "dev-master",
+                "phpunit/phpunit": "^7",
+                "squizlabs/php_codesniffer": "^3.3"
             },
             "type": "library",
             "extra": {
@@ -891,16 +892,16 @@
                 }
             },
             "autoload": {
-                "psr-0": {
-                    "": "src/"
+                "psr-4": {
+                    "Prismic\\": "src/Prismic"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "Apache 2 license"
+                "Apache-2.0"
             ],
-            "description": "PHP development kit for prismic.io",
-            "time": "2018-02-14T15:01:27+00:00"
+            "description": "PHP development kit for Prismic",
+            "time": "2018-09-13T13:56:45+00:00"
         },
         {
             "name": "psr/container",
@@ -3836,9 +3837,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "prismic/php-sdk": 10
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

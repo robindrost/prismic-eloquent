@@ -8,11 +8,10 @@
     }
   ],
   "license": "MIT",
-  "version": "0.0.7",
   "description": "Laravel package that let you use the Prismic api in a more (friendly) eloquent like way.",
   "require": {
     "php": "^7.1",
-    "prismic/php-sdk": "4.0.0-beta",
+    "prismic/php-sdk": "5.0.0",
     "illuminate/support": "^5.5"
   },
   "require-dev": {
