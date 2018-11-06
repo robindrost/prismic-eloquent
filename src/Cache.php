@@ -60,6 +60,6 @@ class Cache implements CacheInterface
      */
     protected function prefix($key)
     {
-        return config('prismiceloquent.cache.prefix') . ' . ' . $key;
+        return config('prismiceloquent.cache.prefix') . '.' . $key;
     }
 }
