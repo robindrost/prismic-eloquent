@@ -11,7 +11,7 @@
   "description": "Laravel package that let you use the Prismic api in a more (friendly) eloquent like way.",
   "require": {
     "php": "^7.1",
-    "prismic/php-sdk": "5.0.1",
+    "prismic/php-sdk": "5.1.0",
     "illuminate/support": "^5.5"
   },
   "require-dev": {

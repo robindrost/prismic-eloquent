@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e4a285e45b46c8df073334d172a1f8df",
+    "content-hash": "2261357d8de696185a369ba22b242a45",
     "packages": [
         {
             "name": "doctrine/inflector",
@@ -861,16 +861,16 @@
         },
         {
             "name": "prismic/php-sdk",
-            "version": "5.0.1",
+            "version": "5.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/prismicio/php-kit.git",
-                "reference": "03aebd08a848edf1fd4506d8ac6a432f5ed6b197"
+                "reference": "85304ce64caf49b6fd646533f02e6eca11ed9ece"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/prismicio/php-kit/zipball/03aebd08a848edf1fd4506d8ac6a432f5ed6b197",
-                "reference": "03aebd08a848edf1fd4506d8ac6a432f5ed6b197",
+                "url": "https://api.github.com/repos/prismicio/php-kit/zipball/85304ce64caf49b6fd646533f02e6eca11ed9ece",
+                "reference": "85304ce64caf49b6fd646533f02e6eca11ed9ece",
                 "shasum": ""
             },
             "require": {
@@ -901,7 +901,7 @@
                 "Apache-2.0"
             ],
             "description": "PHP development kit for Prismic",
-            "time": "2018-09-24T13:09:11+00:00"
+            "time": "2019-05-21T09:26:27+00:00"
         },
         {
             "name": "psr/container",
