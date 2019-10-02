@@ -125,7 +125,7 @@ class QueryBuilder implements QueryBuilderContract
             $pagesAmount = ceil($query->total_results_size / $query->results_size);
 
             foreach (range(2, $pagesAmount) as $number) {
-                $results = array_merge($results, $this->pagerQuery(intval($number)));
+                $results = array_merge($results, $this->pagerQuery(intval($number))->results);
             }
         }
 
