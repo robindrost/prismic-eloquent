@@ -6,6 +6,7 @@ use Illuminate\Support\Collection;
 use RobinDrost\PrismicEloquent\Contracts\Model as ModelContract;
 use RobinDrost\PrismicEloquent\Contracts\QueryBuilder as QueryBuilderContract;
 use stdClass;
+use Illuminate\Support\Str;
 
 abstract class Model implements ModelContract
 {
@@ -50,7 +51,7 @@ abstract class Model implements ModelContract
     public function attribute(string $name)
     {
         if ($this->fieldsToSnakeCase) {
-            $name = snake_case($name);
+            $name = Str::snake($name);
         }
 
         return $this->document->{$name};
@@ -102,7 +103,7 @@ abstract class Model implements ModelContract
     public static function getTypeName() : string
     {
         $fullPath = explode('\\', get_called_class());
-        return snake_case(array_pop($fullPath));
+        return Str::snake(array_pop($fullPath));
     }
 
     /**
@@ -168,11 +169,11 @@ abstract class Model implements ModelContract
         }
 
         if ($this->fieldsToSnakeCase) {
-            $name = snake_case($name);
+            $name = Str::snake($name);
         }
 
         if ($this->hasField($name)) {
-            $fieldMethod = 'get' . ucfirst(camel_case($name)) . 'Field';
+            $fieldMethod = 'get' . ucfirst(Str::camel($name)) . 'Field';
 
             if (method_exists($this, $fieldMethod)) {
                 return $this->{$fieldMethod}($this->field($name));
