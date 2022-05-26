@@ -1,3 +1,7 @@
+# ARCHIVED
+Please note that this repository is archived. Prismic does not seem to update anything on their end to the PHP package and makes updating dependencies
+very hard. Feel free to fork this repo and maintain it.
+
 # Prismic Eloquent
 Use the Prismic Api in a more (friendly) eloquent like way.
 
